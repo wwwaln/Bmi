@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบข้อมูลสุขภาพและโภชนาการเบนโตะ</title>
+    <title>ระบบบันทึกสุขภาพ BMI & เบนโตะโภชนาการ</title>
+    <!-- นำเข้า Chart.js สำหรับทำกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
@@ -31,10 +32,11 @@
             width: 100%;
             max-width: 450px;
             transition: max-width 0.4s ease;
+            position: relative;
         }
 
         /* ขยายขนาดตามหน้าจอการใช้งาน */
-        .container.dashboard-mode { max-width: 900px; }
+        .container.dashboard-mode { max-width: 950px; }
         .container.bento-mode { max-width: 650px; }
 
         h2, h3 {
@@ -82,10 +84,49 @@
         .hidden { display: none !important; }
         .error-msg { color: #e74c3c; font-size: 13px; margin-top: 4px; display: none; }
 
+        /* ส่วนหัวแถบ Dashboard */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .user-profile-summary {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: #ddd;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            border: 2px solid #3498db;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mini-btn {
+            padding: 8px 12px;
+            font-size: 13px;
+            width: auto;
+        }
+
         /* หน้าแดชบอร์ดจัดสองฝั่ง */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 1fr 1.2fr;
+            grid-template-columns: 1fr 1.3fr;
             gap: 24px;
         }
 
@@ -104,34 +145,18 @@
 
         /* สไตล์ตารางบันทึกข้อมูล */
         .table-container {
-            max-height: 200px;
+            max-height: 180px;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 6px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            text-align: center;
-            font-size: 14px;
-        }
-
-        th, td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            color: #555;
-            position: sticky;
-            top: 0;
-        }
-
+        table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
+        th, td { padding: 8px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #555; position: sticky; top: 0; }
         tr:hover { background-color: #f1f1f1; }
 
-        /* สไตล์หน้ากล่องเบนโตะแนะนำอาหาร */
+        /* หน้ากล่องเบนโตะแนะนำอาหาร */
         .calorie-box {
             background: #e8f4fd;
             border-left: 5px solid #3498db;
@@ -148,18 +173,8 @@
             text-align: center;
         }
 
-        .meal-card {
-            background: #fff;
-            padding: 8px;
-            border-radius: 6px;
-            font-size: 13px;
-            border: 1px solid #d0e4f7;
-        }
-
-        .pie-box {
-            max-width: 280px;
-            margin: 0 auto 25px auto;
-        }
+        .meal-card { background: #fff; padding: 8px; border-radius: 6px; font-size: 12px; border: 1px solid #d0e4f7; }
+        .pie-box { max-width: 250px; margin: 0 auto 25px auto; }
 
         .bento-container {
             background: #2c2c2c;
@@ -173,40 +188,59 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
-        .bento-section {
-            background: #fffdf9;
-            border: 3px solid #c0392b;
-            border-radius: 8px;
-            padding: 12px;
-            min-height: 110px;
-        }
-
-        .bento-title {
-            font-size: 12px;
-            font-weight: bold;
-            color: #fff;
-            background: #c0392b;
-            padding: 2px 8px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 6px;
-        }
-
-        .bento-menu-item {
-            font-size: 14px;
-            margin-left: 8px;
-            color: #333;
-            line-height: 1.5;
-        }
-
+        .bento-section { background: #fffdf9; border: 3px solid #c0392b; border-radius: 8px; padding: 12px; min-height: 110px; }
+        .bento-title { font-size: 11px; font-weight: bold; color: #fff; background: #c0392b; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
+        .bento-menu-item { font-size: 14px; margin-left: 8px; color: #333; line-height: 1.5; }
         .back-btn { background: #95a5a6; margin-top: 20px; }
         .back-btn:hover { background: #7f8c8d; }
+
+        /* หน้าต่าง Modal ตั้งค่าโปรไฟล์ */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .avatar-selection {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .avatar-option {
+            font-size: 30px;
+            cursor: pointer;
+            padding: 5px;
+            border: 2px solid transparent;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+
+        .avatar-option.selected {
+            border-color: #3498db;
+            background: #e8f4fd;
+        }
     </style>
 </head>
 <body>
 
 <div class="container" id="main-container">
     
+    <!-- หน้าที่ 1: เข้าสู่ระบบ / สมัครสมาชิก -->
     <div id="login-form">
         <h2>เข้าสู่ระบบ</h2>
         <form onsubmit="handleLogin(event)">
@@ -232,22 +266,34 @@
     </div>
 
 
+    <!-- หน้าที่ 2: หน้าแดชบอร์ดหลัก (กรอกข้อมูล + กราฟ + ตารางประวัติ) -->
     <div id="dashboard" class="hidden">
-        <h2 id="welcome-msg">สวัสดีคุณ ผู้ใช้งาน</h2>
+        <div class="header-bar">
+            <div class="user-profile-summary">
+                <div class="profile-avatar" id="header-avatar-view">👤</div>
+                <div>
+                    <div style="font-size: 12px; color: #777;">ผู้ใช้งานค้างระบบ</div>
+                    <strong id="welcome-msg" style="font-size: 16px;">คุณ ยูสเซอร์</strong>
+                </div>
+            </div>
+            <div class="header-buttons">
+                <button class="mini-btn" onclick="openSettings()" style="background: #2c3e50;">⚙️ ตั้งค่าโปรไฟล์</button>
+                <button class="mini-btn" onclick="handleLogout()" style="background: #e74c3c;">🚪 ออก</button>
+            </div>
+        </div>
+
         <div class="dashboard-layout">
+            <!-- ฝั่งซ้าย: ฟอร์มป้อนค่าตัวเลขสุขภาพ -->
             <div>
-                <h3>ระบุข้อมูลเพื่อคำนวณ</h3>
+                <h3>📝 บันทึกข้อมูลสุขภาพ</h3>
                 <form onsubmit="goToBentoPage(event)">
-                    <div class="row">
-                        <div class="form-group">
-                            <label>เพศ</label>
-                            <select id="gender"><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select>
-                        </div>
-                        <div class="form-group"><label>ปีเกิด (พ.ศ.)</label><input type="number" id="birth-year" value="2545" required></div>
+                    <div class="form-group">
+                        <label>วันที่บันทึก (เลือกวันเองได้เลย)</label>
+                        <input type="date" id="record-date" required>
                     </div>
                     <div class="row">
-                        <div class="form-group"><label>น้ำหนัก (กก.)</label><input type="number" id="weight" step="0.1" required placeholder="เช่น 60"></div>
-                        <div class="form-group"><label>ส่วนสูง (ซม.)</label><input type="number" id="height" required placeholder="เช่น 165"></div>
+                        <div class="form-group"><label>น้ำหนัก (กก.)</label><input type="number" id="weight" step="0.1" required placeholder="เช่น 62.5"></div>
+                        <div class="form-group"><label>ส่วนสูง (ซม.)</label><input type="number" id="height" required placeholder="เช่น 168"></div>
                     </div>
                     <div class="form-group"><label>การแพ้อาหาร</label><input type="text" id="allergy" placeholder="ไม่มี หรือระบุอาหารที่แพ้"></div>
                     <div class="form-group"><label>โรคประจำตัว</label><input type="text" id="disease" placeholder="ไม่มี หรือระบุโรค"></div>
@@ -255,8 +301,9 @@
                 </form>
             </div>
             
+            <!-- ฝั่งขวา: กราฟเส้นแสดงผล และ ตารางบันทึกประวัติย้อนหลัง -->
             <div>
-                <h3>กราฟประวัติสะสม BMI ของคุณ</h3>
+                <h3>📊 กราฟประวัติสะสม BMI ของคุณ</h3>
                 <div class="chart-container"><canvas id="bmiChart"></canvas></div>
                 
                 <h3>📋 ตารางบันทึกประวัติการคำนวณ</h3>
@@ -264,17 +311,14 @@
                     <table>
                         <thead>
                             <tr>
-                                <th>ครั้งที่</th>
-                                <th>วันที่ / เวลา</th>
-                                <th>น้ำหนัก (กก.)</th>
-                                <th>ส่วนสูง (ซม.)</th>
+                                <th>วันที่บันทึก</th>
+                                <th>น้ำหนัก</th>
+                                <th>ส่วนสูง</th>
                                 <th>ค่า BMI</th>
                             </tr>
                         </thead>
                         <tbody id="history-table-body">
-                            <tr>
-                                <td colspan="5" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึก</td>
-                            </tr>
+                            <tr><td colspan="4" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึก</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -283,11 +327,12 @@
     </div>
 
 
+    <!-- หน้าที่ 3: หน้าสรุปผลลัพธ์และแนะอาหารในกล่องข้าวเบนโตะ -->
     <div id="bento-page" class="hidden">
         <h2>🍱 เมนูเบนโตะและแผนสุขภาพของคุณ</h2>
         
         <div class="calorie-box">
-            <p style="text-align: center; font-size: 16px;">ค่า BMI ปัจจุบันของคุณคือ: <strong id="bento-bmi-val" style="color: #c0392b; font-size: 20px;">--</strong> (<span id="bento-bmi-status"></span>)</p>
+            <p style="text-align: center; font-size: 16px;">ค่า BMI ล่าสุดของคุณคือ: <strong id="bento-bmi-val" style="color: #c0392b; font-size: 20px;">--</strong> (<span id="bento-bmi-status"></span>)</p>
             <p style="text-align: center; margin-top: 5px; font-weight: bold;">พลังงานที่ควรได้รับต่อวัน: <span id="total-calories" style="color: #27ae60;">--</span> kcal</p>
             
             <div class="calorie-grid">
@@ -316,15 +361,69 @@
             </div>
         </div>
 
-        <button class="back-btn" onclick="goBackToDashboard()">🔙 กลับไปบันทึกค่าใหม่ / ดูตารางประวัติ</button>
+        <button class="back-btn" onclick="goBackToDashboard()">🔙 กลับไปหน้าแดชบอร์ดหลัก</button>
     </div>
 
 </div>
 
+<!-- Pop-up หน้าต่าง Modal สำหรับเข้าไปตั้งค่าแก้ไขข้อมูลส่วนตัวโปรไฟล์ -->
+<div id="settings-modal" class="modal hidden">
+    <div class="modal-content">
+        <h3>⚙️ ตั้งค่าโปรไฟล์ส่วนตัว</h3>
+        <div class="form-group">
+            <label>เลือกรูปไอคอนแทนตัว (Avatar)</label>
+            <div class="avatar-selection">
+                <span class="avatar-option" onclick="selectAvatar('👤')" id="av-👤">👤</span>
+                <span class="avatar-option" onclick="selectAvatar('🐱')" id="av-🐱">🐱</span>
+                <span class="avatar-option" onclick="selectAvatar('🦊')" id="av-🦊">🦊</span>
+                <span class="avatar-option" onclick="selectAvatar('🐼')" id="av-🐼">🐼</span>
+                <span class="avatar-option" onclick="selectAvatar('กุ้ง')">🍤</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>ตั้งชื่อเล่นของคุณ</label>
+            <input type="text" id="settings-nickname" placeholder="เช่น น้องนนท์, มีมี่">
+        </div>
+        <div class="row">
+            <div class="form-group">
+                <label>เพศ</label>
+                <select id="settings-gender"><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select>
+            </div>
+            <div class="form-group">
+                <label>ปีเกิด (พ.ศ.)</label>
+                <input type="number" id="settings-birthyear" value="2550">
+            </div>
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="saveSettings()" style="background:#2ecc71;">บันทึกโปรไฟล์</button>
+            <button onclick="closeSettings()" style="background:#95a5a6;">ยกเลิก</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ตัวแปรเก็บข้อมูลหลักของระบบ
+    let userProfile = { username: "", nickname: "ผู้ใช้งานทั่วไป", avatar: "👤", gender: "ชาย", birthYear: 2552 };
     let bmiHistory = [];
-    let historyCount = 0;
     let bmiLineChart, macroPieChart;
+
+    // ตรวจสอบข้อมูลล็อกอินเก่าในเครื่องตอนโหลดหน้าเว็บขึ้นมาใหม่ทันทีเพื่อแก้ปัญหาหลุดล็อกอิน
+    window.onload = function() {
+        // กำหนดค่าเริ่มต้นของวันที่กรอกให้เป็นวันปัจจุบันในปฏิทิน
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('record-date').value = today;
+
+        const savedUser = localStorage.getItem('activeUser');
+        if (savedUser) {
+            userProfile = JSON.parse(savedUser);
+            // โหลดประวัติ BMI เก่าคืนกลับมา
+            const savedHistory = localStorage.getItem(`bmiHistory_${userProfile.username}`);
+            if (savedHistory) {
+                bmiHistory = JSON.parse(savedHistory);
+            }
+            showDashboardView();
+        }
+    };
 
     function toggleForm(formType) {
         document.getElementById('login-form').className = formType === 'signup' ? 'hidden' : '';
@@ -333,66 +432,88 @@
 
     function handleSignUp(event) {
         event.preventDefault();
+        const userField = document.getElementById('signup-username').value;
         if (document.getElementById('signup-password').value.length < 8) {
             document.getElementById('password-error').style.display = 'block';
             return;
         }
-        goToDashboard(document.getElementById('signup-username').value);
+        userProfile.username = userField;
+        userProfile.nickname = userField; // ใช้ชื่อผู้ใช้เป็นชื่อเล่นเริ่มต้น
+        saveProfileToStorage();
+        showDashboardView();
     }
 
     function handleLogin(event) {
         event.preventDefault();
-        goToDashboard(document.getElementById('login-username').value);
+        const userField = document.getElementById('login-username').value;
+        userProfile.username = userField;
+        
+        // ดึงข้อมูลเก่าถ้าเคยบันทึกไว้ในเครื่องคอมพิวเตอร์เครื่องนี้มาแสดงต่อ
+        const localData = localStorage.getItem(`profile_${userField}`);
+        if(localData) {
+            userProfile = JSON.parse(localData);
+        } else {
+            userProfile.nickname = userField;
+        }
+
+        const savedHistory = localStorage.getItem(`bmiHistory_${userField}`);
+        bmiHistory = savedHistory ? JSON.parse(savedHistory) : [];
+
+        saveProfileToStorage();
+        showDashboardView();
     }
 
-    function goToDashboard(username) {
-        toggleForm('login');
+    function showDashboardView() {
         document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('signup-form').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
-        document.getElementById('main-container').classList.add('dashboard-mode');
-        document.getElementById('welcome-msg').innerText = `สวัสดีคุณ, ${username} 👋`;
+        document.getElementById('main-container').className = 'container dashboard-mode';
+        
+        // อัปเดตข้อมูล UI บนหน้าจอด้านบนตามข้อมูลใน Profile
+        document.getElementById('welcome-msg').innerText = userProfile.nickname;
+        document.getElementById('header-avatar-view').innerText = userProfile.avatar;
+
         initLineChart();
+        updateLineChart();
+        updateHistoryTable();
     }
 
-    // ฟังก์ชันกดยืนยันบันทึกข้อมูล
+    function handleLogout() {
+        localStorage.removeItem('activeUser');
+        location.reload(); // เคลียร์รีเซ็ตค่ากลับหน้าจอแรกสุด
+    }
+
+    // ฟังก์ชันย้ายไปหน้าแสดงผลกล่องข้าวเบนโตะหลังจากกดยืนยันป้อนค่าตัวเลขสุขภาพเสร็จแล้ว
     function goToBentoPage(event) {
         event.preventDefault();
 
         const weight = parseFloat(document.getElementById('weight').value);
         const height = parseFloat(document.getElementById('height').value);
-        const gender = document.getElementById('gender').value;
-        const birthYear = parseInt(document.getElementById('birth-year').value);
+        const rawDate = document.getElementById('record-date').value;
         
-        // 1. คำนวณ BMI
+        // แปลงฟอร์แมตวันที่จากปฏิทินให้อ่านง่ายๆ (เช่น 2026-07-07 -> 07/07/2026)
+        const dateParts = rawDate.split('-');
+        const formattedDate = `${dateParts[2]}/${dateParts[1]}/${parseInt(dateParts[0])+543}`; 
+
         const heightM = height / 100;
         const bmi = parseFloat((weight / (heightM * heightM)).toFixed(1));
 
-        // 2. ดึงวันที่และเวลาปัจจุบันของระบบ
-        const now = new Date();
-        const dateString = `${now.getDate()}/${now.getMonth() + 1}/${now.getFullYear() + 543} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')} น.`;
+        // ผลักข้อมูลชุดใหม่เข้า Array บันทึกสะสม
+        bmiHistory.push({ date: formattedDate, weight: weight, height: height, value: bmi });
+        
+        // เซฟประวัติสะสมลงความจำเบราว์เซอร์กันหาย
+        localStorage.setItem(`bmiHistory_${userProfile.username}`, JSON.stringify(bmiHistory));
 
-        // 3. เพิ่มข้อมูลลงประวัติ (เพื่ออัปเดตกราฟเส้นและตาราง)
-        historyCount++;
-        bmiHistory.push({
-            times: `ครั้งที่ ${historyCount}`,
-            date: dateString,
-            weight: weight,
-            height: height,
-            value: bmi
-        });
-
-        // อัปเดตกราฟเส้น และ อัปเดตตารางประวัติหน้าจอหลัก
         updateLineChart();
         updateHistoryTable();
 
-        // สลับหน้าจอไปยังหน้ากล่องเบนโตะแนะนำอาหาร
+        // เปิดสวิตช์ย้ายหน้าจอ
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('bento-page').classList.remove('hidden');
         document.getElementById('main-container').className = 'container bento-mode';
 
-        // แสดงผลหน้าเบนโตะ
         document.getElementById('bento-bmi-val').innerText = bmi;
-        generateBentoPlan(bmi, gender, weight, height, birthYear);
+        generateBentoPlan(bmi, weight, height);
     }
 
     function goBackToDashboard() {
@@ -401,59 +522,53 @@
         document.getElementById('main-container').className = 'container dashboard-mode';
     }
 
-    // ฟังก์ชันสร้างแถวข้อมูลตารางประวัติใหม่
     function updateHistoryTable() {
         const tableBody = document.getElementById('history-table-body');
-        tableBody.innerHTML = ""; // ล้างแถวข้อความแจ้งเตือนเก่าออก
-
-        // วนลูปสร้างแถวจากข้อมูลใน array (ย้อนศรให้ข้อมูลใหม่ล่าสุดขึ้นก่อน)
+        if(bmiHistory.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="4" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึกข้อมูล</td></tr>';
+            return;
+        }
+        tableBody.innerHTML = "";
+        // แสดงตารางข้อมูลเรียงจากวันใหม่ล่าสุดย้อนลงไป
         for (let i = bmiHistory.length - 1; i >= 0; i--) {
             const data = bmiHistory[i];
-            const row = `<tr>
-                <td><strong>${data.times}</strong></td>
-                <td>${data.date}</td>
+            tableBody.innerHTML += `<tr>
+                <td><strong>${data.date}</strong></td>
                 <td>${data.weight} กก.</td>
                 <td>${data.height} ซม.</td>
                 <td><strong style="color:#2980b9;">${data.value}</strong></td>
             </tr>`;
-            tableBody.innerHTML += row;
         }
     }
 
-    // ฟังก์ชันเซ็ตอัปโภชนาการและกล่องเบนโตะ
-    function generateBentoPlan(bmi, gender, weight, height, birthYear) {
-        const currentYear = new Date().getFullYear() + 543;
-        const age = currentYear - birthYear;
-        
-        let bmr = (gender === 'ชาย') 
+    // ฟังก์ชันคำนวณสารอาหารและจัดของกินลงกล่องข้าวเบนโตะตามเกณฑ์ผลลัพธ์หุ่น
+    function generateBentoPlan(bmi, weight, height) {
+        const age = (new Date().getFullYear() + 543) - userProfile.birthYear;
+        let bmr = (userProfile.gender === 'ชาย') 
             ? (10 * weight) + (6.25 * height) - (5 * age) + 5
             : (10 * weight) + (6.25 * height) - (5 * age) - 161;
         
         let tdee = Math.round(bmr * 1.3);
-        let status = "";
-        let carbRatio, proteinRatio, fatRatio;
-        let menuCarbs, menuProtein, menuSides;
+        let status = "", carbRatio, proteinRatio, fatRatio, menuCarbs, menuProtein, menuSides;
 
         if (bmi < 18.5) {
-            status = "น้ำหนักน้อยกว่าเกณฑ์ 🟡";
-            tdee += 300;
+            status = "น้ำหนักน้อยกว่าเกณฑ์ 🟡"; tdee += 300;
             carbRatio = 50; proteinRatio = 30; fatRatio = 20;
-            menuCarbs = "🍚 ข้าวญี่ปุ่นนุ่มๆ คลุกงาหอมๆ (เน้นพลังงาน)";
-            menuProtein = "🍳 หมูสไลด์ย่างซีอิ๊ว + ไข่ต้มยางมะตูม 1 ฟอง";
+            menuCarbs = "🍚 ข้าวญี่ปุ่นนุ่มๆ คลุกงาหอมๆ (เน้นคาร์บเพิ่มพลังงาน)";
+            menuProtein = "🍳 หมูสไลด์ผัดซีอิ๊วซอสหวาน + ไข่ต้มยางมะตูม 1 ฟอง";
             menuSides = "🥗 มันฝรั่งบดผสมข้าวโพดหวาน + ผัดผักน้ำมันงา";
         } else if (bmi < 23.0) {
             status = "น้ำหนักปกติ สุขภาพดี 🟢";
             carbRatio = 45; proteinRatio = 30; fatRatio = 25;
             menuCarbs = "🍚 ข้าวกล้องผสมข้าวไรซ์เบอร์รี่ 1.5 ทัพพี";
-            menuProtein = "🐟 ปลาแซลมอนย่างเกลือชิ้นพอดีคำ";
-            menuSides = "🥦 บล็อคโคลี่แครอทต้ม + กิมจิเกาหลีรสจัดจ้าน";
+            menuProtein = "🐟 ปลาแซลมอนย่างเกลือซีอิ๊วชิ้นพอดีคำ";
+            menuSides = "🥦 บล็อคโคลี่และแครอทต้มหวานๆ + กิมจิเกาหลี";
         } else {
-            status = "น้ำหนักเกินเกณฑ์ / อ้วน 🔴";
-            tdee -= 350;
+            status = "น้ำหนักเกินเกณฑ์ / อ้วน 🔴"; tdee -= 350;
             carbRatio = 35; proteinRatio = 45; fatRatio = 20;
-            menuCarbs = "🌾 ข้าวบุกผสมข้าวกล้องน้อยพิเศษ (คาร์บต่ำพิเศษ)";
-            menuProtein = "🍗 อกไก่นึ่งตะไคร้ฉีกสูตรโซเดียมต่ำ";
-            menuSides = "🥗 สลัดผักไฮโดรโปนิกส์ + น้ำสลัดซีอิ๊วญี่ปุ่นสูตรใส";
+            menuCarbs = "🌾 ข้าวบุกผสมข้าวกล้องน้อยพิเศษ (สูตรแป้งน้อยพิเศษ)";
+            menuProtein = "🍗 อกไก่นึ่งฉีกตะไคร้หอมๆ สูตรโซเดียมต่ำ";
+            menuSides = "🥗 สลัดผักไฮโดรโปนิกส์กรอบๆ + น้ำสลัดซีอิ๊วญี่ปุ่นสูตรใส";
         }
 
         document.getElementById('bento-bmi-status').innerText = status;
@@ -469,19 +584,21 @@
         initPieChart(carbRatio, proteinRatio, fatRatio);
     }
 
+    // ฟังก์ชันบริหารการสร้างและอัปเดตระบบกราฟ
     function initLineChart() {
-        if(bmiLineChart) return;
         const ctx = document.getElementById('bmiChart').getContext('2d');
+        if(bmiLineChart) { bmiLineChart.destroy(); }
         bmiLineChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'ค่า BMI ของคุณ', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', tension: 0.2, fill: true }] },
-            options: { responsive: true }
+            data: { labels: [], datasets: [{ label: 'ค่า BMI สะสม', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', tension: 0.1, fill: true }] },
+            options: { responsive: true, scales: { y: { min: 12, max: 38 } } }
         });
     }
 
     function updateLineChart() {
         if(!bmiLineChart) return;
-        bmiLineChart.data.labels = bmiHistory.map(item => item.times);
+        // ดึงข้อมูลวันที่กรอกเองมาใช้เป็นป้ายบอกตำแหน่งแนวนอนใต้กราฟเส้น
+        bmiLineChart.data.labels = bmiHistory.map(item => item.date);
         bmiLineChart.data.datasets[0].data = bmiHistory.map(item => item.value);
         bmiLineChart.update();
     }
@@ -492,11 +609,55 @@
         macroPieChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [`คาร์โบไฮเดรต (${carbs}%)`, `โปรตีน (${protein}%)`, `ไขมัน (${fat}%)`],
+                labels: [`คาร์บ (${carbs}%)`, `โปรตีน (${protein}%)`, `ไขมัน (${fat}%)`],
                 datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#2ecc71'] }]
             },
             options: { responsive: true }
         });
+    }
+
+    /* ⚙️ กลุ่มฟังก์ชันสำหรับหน้าจัดการตั้งค่าโปรไฟล์ส่วนตัว (Modal Settings) */
+    function openSettings() {
+        document.getElementById('settings-modal').classList.remove('hidden');
+        document.getElementById('settings-nickname').value = userProfile.nickname;
+        document.getElementById('settings-gender').value = userProfile.gender;
+        document.getElementById('settings-birthyear').value = userProfile.birthYear;
+        selectAvatar(userProfile.avatar);
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    let tempSelectedAvatar = "👤";
+    function selectAvatar(avatar) {
+        tempSelectedAvatar = avatar;
+        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+        // จัดการไฮไลท์ขอบปุ่มสีฟ้าให้กับรูปที่กำลังเลือกอยู่
+        const targetElement = document.getElementById(`av-${avatar}`);
+        if(targetElement) targetElement.classList.add('selected');
+    }
+
+    function saveSettings() {
+        userProfile.nickname = document.getElementById('settings-nickname').value || userProfile.username;
+        userProfile.gender = document.getElementById('settings-gender').value;
+        userProfile.birthYear = parseInt(document.getElementById('settings-birthyear').value) || 2552;
+        userProfile.avatar = tempSelectedAvatar;
+
+        saveProfileToStorage();
+        
+        // อัปเดตการแสดงชื่อเล่นและรูปใหม่บนหัวเว็บทันที
+        document.getElementById('welcome-msg').innerText = userProfile.nickname;
+        document.getElementById('header-avatar-view').innerText = userProfile.avatar;
+        
+        closeSettings();
+        alert("อัปเดตข้อมูลโปรไฟล์ส่วนตัวเรียบร้อยแล้ว!");
+    }
+
+    function saveProfileToStorage() {
+        // เซฟลงกล่องความจำของระบบเครื่อง
+        localStorage.setItem('activeUser', JSON.stringify(userProfile));
+        localStorage.setItem(`profile_${userProfile.username}`, JSON.stringify(userProfile));
     }
 </script>
 
