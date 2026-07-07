@@ -1,1 +1,43 @@
-# Bmi
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>สร้างผู้ใช้งาน</title>
+</head>
+<body>
+
+<h2>สมัครสมาชิก</h2>
+
+<label>ชื่อผู้ใช้</label><br>
+<input type="text" id="username"><br><br>
+
+<label>รหัสผ่าน</label><br>
+<input type="password" id="password"><br><br>
+
+<button onclick="register()">สร้างผู้ใช้</button>
+
+<p id="result"></p>
+
+<script>
+function register() {
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
+
+    if (username === "" || password === "") {
+        document.getElementById("result").innerHTML = "กรุณากรอกข้อมูลให้ครบ";
+        return;
+    }
+
+    const user = {
+        username: username,
+        password: password
+    };
+
+    localStorage.setItem(username, JSON.stringify(user));
+
+    document.getElementById("result").innerHTML = "สร้างผู้ใช้สำเร็จ";
+}
+</script>
+
+</body>
+</html>
