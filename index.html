@@ -1,43 +1,198 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<title>สร้างผู้ใช้งาน</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเข้าสู่ระบบ / สมัครสมาชิก</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        input:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #007bff;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background: #0056b3;
+        }
+
+        .switch-text {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .switch-text a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .switch-text a:hover {
+            text-decoration: underline;
+        }
+
+        /* ซ่อนหน้าจอเริ่มต้น */
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
 
-<h2>สมัครสมาชิก</h2>
+    <div class="container">
+        <div id="login-box">
+            <h2>เข้าสู่ระบบ</h2>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-username">ชื่อผู้ใช้</label>
+                    <input type="text" id="login-username" required placeholder="กรอกชื่อผู้ใช้">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">รหัสผ่าน</label>
+                    <input type="password" id="login-password" required placeholder="กรอกรหัสผ่าน">
+                </div>
+                <button type="submit">เข้าสู่ระบบ</button>
+            </form>
+            <div class="switch-text">
+                ยังไม่มีบัญชีใช่ไหม? <a href="#" id="to-register">สร้างบัญชีผู้ใช้</a>
+            </div>
+        </div>
 
-<label>ชื่อผู้ใช้</label><br>
-<input type="text" id="username"><br><br>
+        <div id="register-box" class="hidden">
+            <h2>สร้างบัญชีผู้ใช้ใหม่</h2>
+            <form id="register-form">
+                <div class="form-group">
+                    <label for="reg-username">ชื่อผู้ใช้</label>
+                    <input type="text" id="reg-username" required placeholder="ตั้งชื่อผู้ใช้">
+                </div>
+                <div class="form-group">
+                    <label for="reg-password">รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
+                    <input type="password" id="reg-password" minlength="8" required placeholder="ตั้งรหัสผ่าน">
+                </div>
+                <button type="submit">สมัครสมาชิก</button>
+            </form>
+            <div class="switch-text">
+                มีบัญชีอยู่แล้ว? <a href="#" id="to-login">เข้าสู่ระบบที่นี่</a>
+            </div>
+        </div>
+    </div>
 
-<label>รหัสผ่าน</label><br>
-<input type="password" id="password"><br><br>
+    <script>
+        // ดึง Element ต่างๆ มาใช้งาน
+        const loginBox = document.getElementById('login-box');
+        const registerBox = document.getElementById('register-box');
+        
+        const toRegisterLink = document.getElementById('to-register');
+        const toLoginLink = document.getElementById('to-login');
 
-<button onclick="register()">สร้างผู้ใช้</button>
+        // สลับไปหน้าสมัครสมาชิก
+        toRegisterLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            loginBox.classList.add('hidden');
+            registerBox.classList.remove('hidden');
+        });
 
-<p id="result"></p>
+        // สลับกลับมาหน้าเข้าสู่ระบบ
+        toLoginLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            registerBox.classList.add('hidden');
+            loginBox.classList.remove('hidden');
+        });
 
-<script>
-function register() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+        // จำลองระบบบันทึกข้อมูล (ใช้ LocalStorage ของเบราว์เซอร์)
+        document.getElementById('register-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
 
-    if (username === "" || password === "") {
-        document.getElementById("result").innerHTML = "กรุณากรอกข้อมูลให้ครบ";
-        return;
-    }
+            // บันทึกข้อมูลลงเบราว์เซอร์
+            localStorage.setItem('user_' + username, password);
+            
+            alert('สร้างบัญชีผู้ใช้สำเร็จแล้ว! ระบบจะพากลับไปหน้าเข้าสู่ระบบ');
+            
+            // รีเซ็ตฟอร์มแล้วสลับหน้ากลับไปล็อกอิน
+            document.getElementById('register-form').reset();
+            registerBox.classList.add('hidden');
+            loginBox.classList.remove('hidden');
+        });
 
-    const user = {
-        username: username,
-        password: password
-    };
+        // ระบบตรวจสอบตอนเข้าสู่ระบบ
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
 
-    localStorage.setItem(username, JSON.stringify(user));
+            // ดึงรหัสผ่านที่เคยบันทึกไว้มาเช็ค
+            const savedPassword = localStorage.getItem('user_' + username);
 
-    document.getElementById("result").innerHTML = "สร้างผู้ใช้สำเร็จ";
-}
-</script>
-
+            if (savedPassword && savedPassword === password) {
+                alert('ยินดีต้อนรับเข้าสู่ระบบสำเร็จ!');
+            } else {
+                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง หรือยังไม่ได้สมัครสมาชิก');
+            }
+        });
+    </script>
 </body>
 </html>
