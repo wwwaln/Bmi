@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกข้อมูล BMI รายวัน</title>
+    <title>ระบบบันทึกและคำนวณ BMI รายวัน</title>
     <style>
         * {
             box-sizing: border-box;
@@ -27,7 +27,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
         }
 
         h2, h3 {
@@ -40,6 +40,17 @@
             margin-bottom: 15px;
         }
 
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
         label {
             display: block;
             margin-bottom: 5px;
@@ -47,7 +58,7 @@
             font-size: 14px;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
@@ -85,17 +96,22 @@
         }
 
         /* ตารางแสดงประวัติ */
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
 
         th, td {
             border: 1px solid #ddd;
             padding: 10px;
             text-align: center;
-            font-size: 14px;
+            font-size: 13px;
+            white-space: nowrap;
         }
 
         th {
@@ -114,6 +130,14 @@
 
         .hidden {
             display: none;
+        }
+
+        .badge {
+            background: #28a745;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: bold;
         }
     </style>
 </head>
@@ -157,34 +181,63 @@
         </div>
 
         <div id="main-dashboard" class="hidden">
-            <h2>บันทึกสุขภาพรายวัน</h2>
+            <h2>บันทึกข้อมูลสุขภาพรายวัน</h2>
             <div class="user-info" id="welcome-msg">สวัสดีคุณ </div>
             
             <form id="bmi-form">
-                <div class="form-group">
-                    <label>วันที่บันทึก</label>
-                    <input type="date" id="bmi-date" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>วันที่บันทึก</label>
+                        <input type="date" id="health-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>เพศ</label>
+                        <select id="health-gender" required>
+                            <option value="">เลือกเพศ</option>
+                            <option value="ชาย">ชาย</option>
+                            <option value="หญิง">หญิง</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label>ค่า BMI ที่วัดได้ (เช่น 22.5)</label>
-                    <input type="number" id="bmi-value" step="0.1" required placeholder="กรอกค่า BMI ของคุณ">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>ปีเกิด (ค.ศ.) เช่น 1995</label>
+                        <input type="number" id="health-birthyear" min="1900" max="2026" required placeholder="ค.ศ. เกิด">
+                    </div>
+                    <div class="form-group">
+                        <label>น้ำหนัก (กิโลกรัม)</label>
+                        <input type="number" id="health-weight" step="0.1" min="1" required placeholder="เช่น 65.5">
+                    </div>
+                    <div class="form-group">
+                        <label>ส่วนสูง (เซนติเมตร)</label>
+                        <input type="number" id="health-height" step="0.1" min="1" required placeholder="เช่น 170">
+                    </div>
                 </div>
-                <button type="submit" style="background: #28a745;">บันทึกข้อมูล</button>
+
+                <button type="submit" style="background: #28a745;">คำนวณและบันทึกค่าวัดอัตโนมัติ</button>
             </form>
 
             <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
 
-            <h3>ประวัติการบันทึกของคุณ</h3>
-            <table id="history-table">
-                <thead>
-                    <tr>
-                        <th>วันที่</th>
-                        <th>ค่า BMI</th>
-                    </tr>
-                </thead>
-                <tbody id="history-list">
-                    </tbody>
-            </table>
+            <h3>ประวัติการประเมิน BMI ของคุณ</h3>
+            <div class="table-responsive">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>วันที่</th>
+                            <th>เพศ</th>
+                            <th>อายุ</th>
+                            <th>น้ำหนัก (กก.)</th>
+                            <th>ส่วนสูง (ซม.)</th>
+                            <th>ค่า BMI</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-list">
+                        </tbody>
+                </table>
+            </div>
             
             <button id="logout-btn" style="background: #dc3545; margin-top: 20px;">ออกจากระบบ</button>
         </div>
@@ -195,21 +248,20 @@
         const registerBox = document.getElementById('register-box');
         const mainDashboard = document.getElementById('main-dashboard');
         
-        let currentUser = ""; // เก็บชื่อผู้ใช้ที่กำลังล็อกอินอยู่ปัจจุบัน
+        let currentUser = ""; 
 
-        // ตั้งค่าวันที่เริ่มต้นของช่องบันทึกข้อมูลให้เป็น "วันนี้" อัตโนมัติ
-        document.getElementById('bmi-date').valueAsDate = new Date();
+        // ตั้งวันที่ปัจจุบันเป็นค่าเริ่มต้น
+        document.getElementById('health-date').valueAsDate = new Date();
 
-        // สลับหน้าจอไปมา
+        // สลับหน้าจอ
         document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); loginBox.classList.add('hidden'); registerBox.classList.remove('hidden'); });
         document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); registerBox.classList.add('hidden'); loginBox.classList.remove('hidden'); });
 
-        // ระบบสมัครสมาชิก
+        // สมัครสมาชิก
         document.getElementById('register-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('reg-username').value;
             const password = document.getElementById('reg-password').value;
-
             localStorage.setItem('user_' + username, password);
             alert('สร้างบัญชีผู้ใช้สำเร็จแล้ว!');
             document.getElementById('register-form').reset();
@@ -217,7 +269,7 @@
             loginBox.classList.remove('hidden');
         });
 
-        // ระบบเข้าสู่ระบบ
+        // เข้าสู่ระบบ
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value;
@@ -228,68 +280,81 @@
                 currentUser = username;
                 document.getElementById('welcome-msg').innerText = `สวัสดีคุณ: ${currentUser}`;
                 
-                // ซ่อนหน้าล็อกอิน ย้ายไปหน้าแดชบอร์ด บันทึก BMI
                 loginBox.classList.add('hidden');
                 mainDashboard.classList.remove('hidden');
                 
-                // ดึงประวัติที่เคยบันทึกไว้ขึ้นมาโชว์
-                displayHistory();
+                displayHistory(); // แสดงประวัติเก่าของคนที่ล็อกอิน
             } else {
                 alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
         });
 
-        // ระบบบันทึกค่า BMI รายวัน
+        // ระบบคำนวณและบันทึกข้อมูลอัตโนมัติ
         document.getElementById('bmi-form').addEventListener('submit', (e) => {
             e.preventDefault();
-            const dateInput = document.getElementById('bmi-date').value;
-            const bmiInput = document.getElementById('bmi-value').value;
+            
+            const date = document.getElementById('health-date').value;
+            const gender = document.getElementById('health-gender').value;
+            const birthYear = parseInt(document.getElementById('health-birthyear').value);
+            const weight = parseFloat(document.getElementById('health-weight').value);
+            const height = parseFloat(document.getElementById('health-height').value);
 
-            // ดึงข้อมูลประวัติเก่าในคลัง (ถ้ามี)
-            let history = JSON.parse(localStorage.getItem('bmi_history_' + currentUser)) || [];
+            // 1. คำนวณอายุอัตโนมัติ (อิงปีปัจจุบัน ค.ศ. 2026)
+            const currentYear = new Date().getFullYear();
+            const age = currentYear - birthYear;
+
+            // 2. คำนวณ BMI อัตโนมัติ (น้ำหนัก / ส่วนสูงเมตรยกกำลังสอง)
+            const heightInMeters = height / 100;
+            const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
+
+            // 3. บันทึกลง LocalStorage
+            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
+            history.push({ date, gender, age, weight, height, bmi });
             
-            // เพิ่มข้อมูลใหม่เข้าไปในรายการ
-            history.push({ date: dateInput, bmi: bmiInput });
-            
-            // เรียงลำดับตามวันที่จากเก่าไปใหม่
+            // เรียงวันที่ล่าสุดอยู่ล่าง หรือเรียงจากเก่าไปใหม่
             history.sort((a, b) => new Date(a.date) - new Date(b.date));
+            localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
 
-            // เซฟกลับลงไปในเบราว์เซอร์
-            localStorage.setItem('bmi_history_' + currentUser, JSON.stringify(history));
-
-            alert('บันทึกค่า BMI เรียบร้อยแล้ว!');
-            document.getElementById('bmi-value').value = ""; // เคลียร์ช่องกรอกเลข BMI
+            alert(`คำนวณเสร็จสิ้น! ค่า BMI ของคุณคือ ${bmi} ระบบบันทึกข้อมูลให้เรียบร้อยแล้ว`);
             
-            // อัปเดตตารางประวัติแบบเรียลไทม์
-            displayHistory();
+            // ล้างฟอร์มน้ำหนักส่วนสูง (เก็บเพศกับปีเกิดไว้เผื่อกรอกวันถัดไปจะได้ไม่ต้องพิมพ์ใหม่หมด)
+            document.getElementById('health-weight').value = "";
+            document.getElementById('health-height').value = "";
+            
+            displayHistory(); // รีเฟรชตาราง
         });
 
-        // ฟังก์ชันดึงประวัติมาแสดงบนตาราง
+        // ดึงประวัติมาแสดง
         function displayHistory() {
             const historyList = document.getElementById('history-list');
-            historyList.innerHTML = ""; // เคลียร์ตารางเดิมก่อน
+            historyList.innerHTML = ""; 
 
-            let history = JSON.parse(localStorage.getItem('bmi_history_' + currentUser)) || [];
+            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
 
             if (history.length === 0) {
-                historyList.innerHTML = `<tr><td colspan="2" style="color:#888;">ยังไม่มีประวัติการบันทึก</td></tr>`;
+                historyList.innerHTML = `<tr><td colspan="6" style="color:#888;">ยังไม่มีประวัติการบันทึกข้อมูลสุขภาพ</td></tr>`;
                 return;
             }
 
-            // นำประวัติแต่ละวันมาสร้างเป็นแถวในตาราง
             history.forEach(item => {
                 const row = `<tr>
                     <td>${item.date}</td>
-                    <td><strong>${item.bmi}</strong></td>
+                    <td>${item.gender}</td>
+                    <td>${item.age} ปี</td>
+                    <td>${item.weight}</td>
+                    <td>${item.height}</td>
+                    <td><span class="badge">${item.bmi}</span></td>
                 </tr>`;
                 historyList.innerHTML += row;
             });
         }
 
-        // ปุ่มออกจากระบบ
+        // ออกจากระบบ
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = "";
             document.getElementById('login-form').reset();
+            document.getElementById('bmi-form').reset();
+            document.getElementById('health-date').valueAsDate = new Date();
             mainDashboard.classList.add('hidden');
             loginBox.classList.remove('hidden');
         });
