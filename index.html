@@ -20,7 +20,7 @@
             align-items: center;
             min-height: 100vh;
             padding: 10px;
-            padding-bottom: 80px; /* เผื่อพื้นที่สำหรับเมนูด้านล่าง */
+            padding-bottom: 80px; 
         }
 
         .container {
@@ -99,10 +99,10 @@
             font-weight: bold;
         }
 
-        /* --- สไตล์ส่วนแสดงกราฟแบบเลื่อนได้ไม่จำกัด (Scrollable Chart) --- */
+        /* --- สไตล์ส่วนแสดงกราฟแบบเลื่อนได้ไม่จำกัด --- */
         .chart-outer-container {
             width: 100%;
-            overflow-x: auto; /* เปิดให้เลื่อนซ้ายขวาได้เมื่อกราฟยาวเกินหน้าจอ */
+            overflow-x: auto; 
             margin: 20px 0;
             border: 1px solid #eee;
             border-radius: 8px;
@@ -112,7 +112,7 @@
         .chart-inner-container {
             position: relative;
             height: 280px;
-            min-width: 100%; /* ขนาดความกว้างจะถูกขยายอัตโนมัติด้วย JavaScript ตามจำนวนข้อมูล */
+            min-width: 100%; 
         }
 
         /* --- สไตล์ตารางและการลบข้อมูล --- */
@@ -156,10 +156,10 @@
             background: #dc3545;
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: normal;
             margin-top: 0;
             width: auto;
@@ -169,7 +169,7 @@
             background: #bd2130;
         }
 
-        /* --- สไตล์ระบบเมนูด้านล่าง (Bottom Navigation) --- */
+        /* --- สไตล์ระบบเมนูด้านล่าง --- */
         .nav-bar {
             position: fixed;
             bottom: 0;
@@ -428,20 +428,29 @@
         const navSetBtn = document.getElementById('nav-set-btn');
 
         navDashBtn.addEventListener('click', () => {
-            navDashBtn.classList.add('active');
-            navSetBtn.classList.remove('active');
-            tabDashboard.classList.remove('hidden');
-            tabSettings.classList.add('hidden');
-            displayHistoryAndChart(); 
+            switchTab('dashboard');
         });
 
         navSetBtn.addEventListener('click', () => {
-            navSetBtn.classList.add('active');
-            navDashBtn.classList.remove('active');
-            tabDashboard.classList.add('hidden');
-            tabSettings.classList.remove('hidden');
-            updateProfilePage(); 
+            switchTab('settings');
         });
+
+        function switchTab(tabName) {
+            localStorage.setItem('current_tab_' + currentUser, tabName); // จำแท็บล่าสุดที่เปิดไว้
+            if (tabName === 'dashboard') {
+                navDashBtn.classList.add('active');
+                navSetBtn.classList.remove('active');
+                tabDashboard.classList.remove('hidden');
+                tabSettings.classList.add('hidden');
+                displayHistoryAndChart(); 
+            } else {
+                navSetBtn.classList.add('active');
+                navDashBtn.classList.remove('active');
+                tabDashboard.classList.add('hidden');
+                tabSettings.classList.remove('hidden');
+                updateProfilePage(); 
+            }
+        }
 
         // สมัครสมาชิก
         document.getElementById('register-form').addEventListener('submit', (e) => {
@@ -463,19 +472,27 @@
             const savedPassword = localStorage.getItem('user_' + username);
 
             if (savedPassword && savedPassword === password) {
-                currentUser = username;
-                loginBox.classList.add('hidden');
-                tabDashboard.classList.remove('hidden');
-                appNav.classList.remove('hidden');
-                
-                const savedAvatar = localStorage.getItem('avatar_' + currentUser);
-                document.getElementById('avatar-img').src = savedAvatar ? savedAvatar : "https://via.placeholder.com/120";
-
-                displayHistoryAndChart(); 
+                loginSuccess(username);
             } else {
                 alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
         });
+
+        // ฟังก์ชันเมื่อล็อกอินสำเร็จ (ใช้ร่วมกันตอนเปิดหน้าจอมาแล้วเจอ Session เก่า)
+        function loginSuccess(username) {
+            currentUser = username;
+            localStorage.setItem('session_user', username); // เซฟสถานะการล็อกอินลงเครื่อง
+
+            loginBox.classList.add('hidden');
+            appNav.classList.remove('hidden');
+            
+            const savedAvatar = localStorage.getItem('avatar_' + currentUser);
+            document.getElementById('avatar-img').src = savedAvatar ? savedAvatar : "https://via.placeholder.com/120";
+
+            // เช็คว่าก่อนรีเฟรชเปิดแท็บไหนค้างไว้
+            const lastTab = localStorage.getItem('current_tab_' + currentUser) || 'dashboard';
+            switchTab(lastTab);
+        }
 
         // บันทึกข้อมูลและคำนวณอัตโนมัติ
         document.getElementById('bmi-form').addEventListener('submit', (e) => {
@@ -494,8 +511,6 @@
             const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
             let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            
-            // สร้างไอดีแบบสุ่ม (Timestamp) เพื่อใช้ระบุแถวตอนสั่งลบ
             const uniqueId = Date.now().toString();
             
             history.push({ id: uniqueId, date, gender, age, weight, height, bmi, birthYear });
@@ -509,17 +524,21 @@
             displayHistoryAndChart(); 
         });
 
-        // ฟังก์ชันลบข้อมูลรายวัน
-        function deleteRecord(id) {
-            if (confirm('คุณแน่ใจใช่ไหมว่าต้องการลบข้อมูลของวันนี้ทิ้ง?')) {
-                let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-                // กรองเอาตัวที่มี ID ไม่ตรงกับที่ส่งมาเก็บไว้ (ตัวที่ตรงจะโดนลบออก)
-                history = history.filter(item => item.id !== id);
-                localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
-                
-                // โหลดหน้าจอใหม่ทันทีหลังลบเสร็จ
-                displayHistoryAndChart();
-            }
+        // แก้ไขฟังก์ชันลบข้อมูล: ผูกผ่าน Event Listener โดยตรง ป้องกันปัญหากดไม่ติด
+        function attachDeleteEvents() {
+            const deleteButtons = document.querySelectorAll('.btn-delete');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    if (confirm('คุณแน่ใจใช่ไหมว่าต้องการลบข้อมูลของวันนี้ทิ้ง?')) {
+                        let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
+                        history = history.filter(item => item.id !== id);
+                        localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
+                        displayHistoryAndChart();
+                        updateProfilePage();
+                    }
+                });
+            });
         }
 
         // อัปเดตข้อมูลหน้าโปรไฟล์
@@ -543,7 +562,7 @@
             }
         }
 
-        // แสดงประวัติและวาดกราฟไร้ขีดจำกัด
+        // แสดงประวัติและวาดกราฟ
         function displayHistoryAndChart() {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = ""; 
@@ -560,9 +579,8 @@
 
             history.forEach(item => {
                 chartLabels.push(item.date);
-                chartData.push(item.bmi);
+                chartData.push(parseFloat(item.bmi));
 
-                // เพิ่มปุ่มลบ (deleteRecord) ลงในคอลัมน์สุดท้ายของแต่ละแถว
                 const row = `<tr>
                     <td>${item.date}</td>
                     <td>${item.gender}</td>
@@ -570,34 +588,41 @@
                     <td>${item.weight}</td>
                     <td>${item.height}</td>
                     <td><span class="badge">${item.bmi}</span></td>
-                    <td><button class="btn-delete" onclick="deleteRecord('${item.id}')">ลบ ❌</button></td>
+                    <td><button class="btn-delete" data-id="${item.id}">ลบ ❌</button></td>
                 </tr>`;
                 historyList.innerHTML += row;
             });
 
-            // ปรับความกว้างของพื้นที่กราฟอัตโนมัติตามจำนวนข้อมูล (Infinite / Continuous Graph)
-            // ยิ่งข้อมูลเยอะ กราฟจะยิ่งขยายไปทางขวาเพื่อให้มีพื้นที่วาด ไม่บีบอัดกันจนเละ
             const innerChartContainer = document.getElementById('chart-inner');
             if (chartLabels.length > 7) {
-                const dynamicWidth = chartLabels.length * 50; // เพิ่มพื้นที่ 50px ต่อ 1 จุดข้อมูล
+                const dynamicWidth = chartLabels.length * 60; 
                 innerChartContainer.style.width = dynamicWidth + "px";
             } else {
                 innerChartContainer.style.width = "100%";
             }
 
             updateChart(chartLabels, chartData);
+            attachDeleteEvents(); // เรียกผูกคำสั่งปุ่มลบหลังจากสร้างตารางเสร็จ
 
-            // เมื่อกราฟอัปเดต ให้ระบบเลื่อนสกรอลล์บาร์ไปขวาสุดโดยอัตโนมัติ เพื่อให้ผู้ใช้เห็นข้อมูลล่าสุดของวันนี้ทันที
             setTimeout(() => {
                 const outerContainer = document.getElementById('chart-outer');
                 outerContainer.scrollLeft = outerContainer.scrollWidth;
             }, 100);
         }
 
-        // ฟังก์ชันวาดกราฟ
+        // วาดกราฟและคำนวณแกน Y ต่ำสุด-สูงสุดตามจริง
         function updateChart(labels, data) {
             const ctx = document.getElementById('bmiChart').getContext('2d');
             if (bmiChart) { bmiChart.destroy(); }
+
+            // หาค่าต่ำสุดและสูงสุดจากข้อมูลที่กรอก เพื่อปรับแกน Y ให้สวยงาม
+            let minY = 10;
+            let maxY = 40;
+            if (data.length > 0) {
+                minY = Math.min(...data) - 1; // ลบออก 1 ให้เหลือพื้นที่ขอบล่างนิดหน่อย
+                maxY = Math.max(...data) + 1; // บวกเข้า 1 ให้เหลือพื้นที่ขอบบนนิดหน่อย
+            }
+
             bmiChart = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -614,7 +639,14 @@
                 },
                 options: {
                     responsive: true,
-                    maintainAspectRatio: false
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: Math.floor(minY), // ตั้งค่าแกน Y ต่ำสุดตามข้อมูล
+                            max: Math.ceil(maxY),  // ตั้งค่าแกน Y สูงสุดตามข้อมูล
+                            title: { display: true, text: 'ค่า BMI' }
+                        }
+                    }
                 }
             });
         }
@@ -622,6 +654,7 @@
         // ออกจากระบบ
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = "";
+            localStorage.removeItem('session_user'); // ลบประวัติการล็อกอินค้าง
             if (bmiChart) { bmiChart.destroy(); bmiChart = null; }
             document.getElementById('login-form').reset();
             document.getElementById('bmi-form').reset();
@@ -631,9 +664,19 @@
             tabSettings.classList.add('hidden');
             appNav.classList.add('hidden');
             loginBox.classList.remove('hidden');
+            registerBox.classList.add('hidden');
             
             navDashBtn.classList.add('active');
             navSetBtn.classList.remove('active');
+        });
+
+        // --- เพิ่มระบบตรวจสอบ Auto Login เมื่อเปิดหน้าจอขึ้นมาใหม่ ---
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedSessionUser = localStorage.getItem('session_user');
+            if (savedSessionUser) {
+                // ถ้ามีชื่อผู้ใช้ล็อกอินค้างไว้ ให้ข้ามหน้าล็อกอินไปหน้าแอปเลย
+                loginSuccess(savedSessionUser);
+            }
         });
     </script>
 </body>
