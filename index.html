@@ -34,9 +34,8 @@
             transition: max-width 0.4s ease;
         }
 
-        /* ปรับ Layout หน้าจอให้สมดุลตามการใช้งาน */
         .container.dashboard-mode { max-width: 950px; }
-        .container.bento-mode { max-width: 650px; }
+        .container.bento-mode { max-width: 700px; }
         .container.profile-mode { max-width: 500px; }
 
         h2, h3 {
@@ -115,7 +114,6 @@
 
         .mini-btn { padding: 8px 16px; font-size: 13px; width: auto; }
 
-        /* จัด Grid แดชบอร์ดสองฝั่ง */
         .dashboard-layout {
             display: grid;
             grid-template-columns: 1fr 1.3fr;
@@ -137,16 +135,28 @@
 
         /* ตารางบันทึก */
         .table-container {
-            max-height: 180px;
+            max-height: 220px;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 6px;
         }
 
         table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
-        th, td { padding: 8px; border-bottom: 1px solid #ddd; }
-        th { background-color: #f8f9fa; color: #555; position: sticky; top: 0; }
+        th, td { padding: 10px 6px; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; color: #555; position: sticky; top: 0; z-index: 10; }
         tr:hover { background-color: #f1f1f1; }
+        
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            width: auto;
+        }
+        .delete-btn:hover { background: #c0392b; }
 
         /* กล่องเบนโตะอาหาร */
         .calorie-box {
@@ -166,7 +176,21 @@
         }
 
         .meal-card { background: #fff; padding: 8px; border-radius: 6px; font-size: 12px; border: 1px solid #d0e4f7; }
-        .pie-box { max-width: 250px; margin: 0 auto 25px auto; }
+        
+        /* สารอาหารแบบกรัม */
+        .macro-grams-box {
+            display: flex;
+            justify-content: space-around;
+            background: #fffdf4;
+            border: 1px dashed #f1c40f;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .pie-box { max-width: 260px; margin: 0 auto 20px auto; }
 
         .bento-container {
             background: #2c2c2c;
@@ -180,11 +204,19 @@
             box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
         }
 
-        .bento-section { background: #fffdf9; border: 3px solid #c0392b; border-radius: 8px; padding: 12px; min-height: 110px; }
-        .bento-title { font-size: 11px; font-weight: bold; color: #fff; background: #c0392b; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-bottom: 6px; }
-        .bento-menu-item { font-size: 14px; margin-left: 8px; color: #333; line-height: 1.5; }
-        .back-btn { background: #95a5a6; margin-top: 20px; }
-        .back-btn:hover { background: #7f8c8d; }
+        .bento-section { background: #fffdf9; border: 3px solid #c0392b; border-radius: 8px; padding: 12px; min-height: 115px; position: relative; }
+        .bento-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .bento-title { font-size: 11px; font-weight: bold; color: #fff; background: #c0392b; padding: 2px 8px; border-radius: 4px; }
+        
+        /* ปุ่มรีเซ็ตเฉพาะอัน */
+        .reset-mini-btn {
+            background: none; color: #c0392b; border: 1px solid #c0392b; padding: 1px 6px; font-size: 11px; border-radius: 4px; width: auto; font-weight: normal;
+        }
+        .reset-mini-btn:hover { background: #c0392b; color: white; }
+
+        .bento-menu-item { font-size: 14px; margin-left: 4px; color: #333; line-height: 1.5; font-weight: 500; }
+        
+        .bento-actions { display: flex; gap: 10px; margin-top: 20px; }
 
         /* โซนอัปโหลดรูปภาพ */
         .avatar-upload-zone {
@@ -281,11 +313,12 @@
                                 <th>วันที่บันทึก</th>
                                 <th>น้ำหนัก</th>
                                 <th>ส่วนสูง</th>
-                                <th>ค่า BMI</th>
+                                <th>BMI</th>
+                                <th>จัดการ</th>
                             </tr>
                         </thead>
                         <tbody id="history-table-body">
-                            <tr><td colspan="4" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึกข้อมูล</td></tr>
+                            <tr><td colspan="5" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึกข้อมูล</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -308,26 +341,45 @@
             </div>
         </div>
 
-        <h3>สัดส่วนสารอาหารที่แนะนำ (Macros)</h3>
+        <h3>⚖️ อัตราส่วนสารอาหารที่ควรทานต่อวัน (กรัม)</h3>
+        <div class="macro-grams-box">
+            <div>🟡 คาร์โบไฮเดรต<br><strong id="grams-carbs" style="color:#f1c40f; font-size:16px;">--</strong> กรัม</div>
+            <div>🔴 โปรตีน<br><strong id="grams-protein" style="color:#e74c3c; font-size:16px;">--</strong> กรัม</div>
+            <div>🟠 ไขมันดี<br><strong id="grams-fat" style="color:#e67e22; font-size:16px;">--</strong> กรัม</div>
+        </div>
+
+        <h3>สัดส่วนพลังงานจากสารอาหาร (Macros)</h3>
         <div class="pie-box"><canvas id="macroPieChart"></canvas></div>
 
         <h3>กล่องข้าวเบนโตะของคุณวันนี้</h3>
         <div class="bento-container">
             <div class="bento-section" style="grid-column: 1 / 2; grid-row: 1 / 2;">
-                <span class="bento-title">🍚 อาหารหลัก / คาร์โบไฮเดรต</span>
+                <div class="bento-header-row">
+                    <span class="bento-title">🍚 คาร์โบไฮเดรต</span>
+                    <button class="reset-mini-btn" onclick="resetSingleMenu('carbs')">🔄 เปลี่ยน</button>
+                </div>
                 <div id="bento-carbs" class="bento-menu-item">--</div>
             </div>
             <div class="bento-section" style="grid-column: 2 / 3; grid-row: 1 / 3;">
-                <span class="bento-title">🍗 กับข้าวหลัก / โปรตีน</span>
+                <div class="bento-header-row">
+                    <span class="bento-title">🍗 โปรตีน</span>
+                    <button class="reset-mini-btn" onclick="resetSingleMenu('protein')">🔄 เปลี่ยน</button>
+                </div>
                 <div id="bento-protein" class="bento-menu-item">--</div>
             </div>
             <div class="bento-section" style="grid-column: 1 / 2; grid-row: 2 / 3;">
-                <span class="bento-title">🥗 เครื่องเคียง / ผัก & ไขมันดี</span>
+                <div class="bento-header-row">
+                    <span class="bento-title">🥗 ผัก & ไขมันดี</span>
+                    <button class="reset-mini-btn" onclick="resetSingleMenu('sides')">🔄 เปลี่ยน</button>
+                </div>
                 <div id="bento-sides" class="bento-menu-item">--</div>
             </div>
         </div>
 
-        <button class="back-btn" onclick="goBackToDashboard()">🔙 กลับไปหน้าแดชบอร์ดหลัก</button>
+        <div class="bento-actions">
+            <button onclick="resetAllMenus()" style="background: #e67e22;">🔄 สุ่มเมนูใหม่ทั้งหมด</button>
+            <button class="back-btn" onclick="goBackToDashboard()" style="margin-top:0;">🔙 กลับหน้าแดชบอร์ด</button>
+        </div>
     </div>
 
 
@@ -378,12 +430,31 @@
 </div>
 
 <script>
-    // สั่งให้ Chart.js เปิดใช้งาน Plugin ตัวเลขลอยบนกราฟในระดับ Global ทันที
     Chart.register(ChartDataLabels);
 
     let userProfile = { username: "", nickname: "ผู้ใช้งานทั่วไป", avatarData: "", gender: "ชาย", birthYear: 2550 };
     let bmiHistory = [];
     let bmiLineChart, macroPieChart;
+    let currentBmiCategory = "normal"; // เก็บสถานะหุ่นปัจจุบันดึงคลังเมนู
+
+    // คลังเมนูอาหารสำหรับระบบสุ่มแยกตามหมวดหมู่และกลุ่มลีน/เพิ่มกล้าม
+    const foodDatabase = {
+        underweight: {
+            carbs: ["🍚 ข้าวญี่ปุ่นนุ่มๆ คลุกงาขาวหอม", "🍠 มันหวานญี่ปุ่นเผือกนึ่งชิ้นใหญ่", "🍝 เส้นพาสต้าผัดน้ำมันมะกอกกระเทียม"],
+            protein: ["🍳 หมูสไลด์ผัดซีอิ๊วญี่ปุ่น + ไข่ต้มอบ", "🍗 สะโพกไก่ย่างเทริยากิเนื้อฉ่ำ", "🥩 เนื้อวัวสไลด์ผัดซอสหัวหอม"],
+            sides: ["🥗 มันฝรั่งบดเนื้อเนียนใส่เนยแท้", "🥦 บล็อคโคลี่และแครอทผัดน้ำมันหอย", "🥑 อะโวคาโดหั่นเต๋าโรยเกลือพริกไทย"]
+        },
+        normal: {
+            carbs: ["🍚 ข้าวกล้องไรซ์เบอร์รี่ผสม 1.5 ทัพพี", "🌾 ข้าวซ้อมมือหุงผสมควินัวสมุนไพร", "🍠 มันเทศนึ่งโรยงาดำบด"],
+            protein: ["🐟 ปลาแซลมอนย่างเกลือชิ้นพอดีคำ", "🍗 อกไก่ม้วนสอดไส้ผักรวมนึ่ง", "🦪 กุ้งขาวแกะเปลือกผัดพริกสามสี"],
+            sides: ["🥦 บล็อคโคลี่และเห็ดหอมต้ม", "🥬 กิมจิเกาหลีโฮมเมดรสเข้มข้น", "🥗 สลัดผักแก้วมะเขือเทศราชินี + น้ำสลัดงา"]
+        },
+        overweight: {
+            carbs: ["🌾 ข้าวบุกผสมข้าวกล้องน้อยพิเศษ (แป้งต่ำ)", "🥗 เส้นแก้วลวกคลุกเคล้าผักชีฝรั่ง", "🎃 ฟักทองนึ่งชิ้นพอดีคำ (คาร์บเชิงซ้อนต่ำ)"],
+            protein: ["🍗 อกไก่นึ่งฉีกโรยพริกไทยดำสูตรโซเดียมต่ำ", "🐟ปลากระพงนึ่งซีอิ๊วใส่ขึ้นฉ่ายและขิงสด", "🥚 ไข่ขาวต้มสุก 3 ฟองคู่เต้าหู้ขาวนึ่ง"],
+            sides: ["🥗 สลัดผักไฮโดรโปนิกส์สด + น้ำใสซีอิ๊วญี่ปุ่น", "🥦 ผักกาดขาวและกะหล่ำดอกลวกจิ้มแจ่ว", "🥒 แตงกวาญี่ปุ่นและมะเขือเทศสดแช่เย็น"]
+        }
+    };
 
     window.onload = function() {
         const today = new Date().toISOString().split('T')[0];
@@ -434,7 +505,6 @@
     }
 
     function showDashboardView() {
-        // คุมปิดหน้าอื่นให้หมดแล้วเปิด Dashboard
         document.getElementById('login-form').classList.add('hidden');
         document.getElementById('signup-form').classList.add('hidden');
         document.getElementById('bento-page').classList.add('hidden');
@@ -480,13 +550,11 @@
         }
     }
 
-    /* ⚙️ กลุ่มฟังก์ชันสลับหน้าไปหน้า "ตั้งค่าโปรไฟล์" */
     function goToProfilePage() {
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('profile-page').classList.remove('hidden');
         document.getElementById('main-container').className = 'container profile-mode';
 
-        // นำค่าปัจจุบันใส่ลงช่องฟอร์ม
         document.getElementById('settings-nickname').value = userProfile.nickname;
         document.getElementById('settings-gender').value = userProfile.gender;
         document.getElementById('settings-birthyear').value = userProfile.birthYear;
@@ -494,7 +562,10 @@
         tempAvatarBase64 = userProfile.avatarData;
         renderAvatarElements(tempAvatarBase64, 'profile-page-avatar-img', 'profile-page-avatar-text');
 
-        // แสดงผลสรุปข้อมูลล่าสุด
+        updateSettingsBadge();
+    }
+
+    function updateSettingsBadge() {
         if(bmiHistory.length > 0) {
             const latest = bmiHistory[bmiHistory.length - 1];
             document.getElementById('badge-weight').innerText = latest.weight;
@@ -519,7 +590,7 @@
 
         saveProfileToStorage();
         alert("บันทึกการตั้งค่าโปรไฟล์สำเร็จ!");
-        showDashboardView(); // ย้ายกลับไปหน้าแดชบอร์ดหลัก
+        showDashboardView();
     }
 
     function saveProfileToStorage() {
@@ -527,7 +598,7 @@
         localStorage.setItem(`profile_${userProfile.username}`, JSON.stringify(userProfile));
     }
 
-    /* 🍱 ส่วนประมวลผล BMI และ หน้ากล่องข้าวเบนโตะ */
+    /* 🍱 ประมวลผล BMI และจัดสัดส่วนสารอาหาร (กรัม) */
     function goToBentoPage(event) {
         event.preventDefault();
 
@@ -561,13 +632,26 @@
         showDashboardView();
     }
 
+    /* 🗑️ ฟังก์ชันลบแถวประวัติที่เลือกออก */
+    function deleteHistoryItem(index) {
+        if(confirm("คุณแน่ใจหรือไม่ว่าต้องการลบแถวบันทึกข้อมูลสุขภาพนี้?")) {
+            bmiHistory.splice(index, 1); // ลบข้อมูลออกจากอาร์เรย์
+            localStorage.setItem(`bmiHistory_${userProfile.username}`, JSON.stringify(bmiHistory));
+            
+            updateLineChart(); // รีเซ็ตวาดกราฟเส้นใหม่ตามชุดข้อมูลที่อัปเดต
+            updateHistoryTable(); // วาดตารางใหม่
+            updateSettingsBadge(); // อัปเดตข้อมูล badge หน้าตั้งค่าตามล่าสุด
+        }
+    }
+
     function updateHistoryTable() {
         const tableBody = document.getElementById('history-table-body');
         if(bmiHistory.length === 0) {
-            tableBody.innerHTML = '<tr><td colspan="4" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึกข้อมูล</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" style="color: #999; padding: 20px;">ยังไม่มีประวัติการบันทึกข้อมูล</td></tr>';
             return;
         }
         tableBody.innerHTML = "";
+        // วาดตารางโดยยังยึดลำดับอินเด็กซ์ที่ถูกต้องเพื่อให้ลบถูกตำแหน่ง
         for (let i = bmiHistory.length - 1; i >= 0; i--) {
             const data = bmiHistory[i];
             tableBody.innerHTML += `<tr>
@@ -575,6 +659,7 @@
                 <td>${data.weight} กก.</td>
                 <td>${data.height} ซม.</td>
                 <td><strong style="color:#2980b9;">${data.value}</strong></td>
+                <td><button class="delete-btn" onclick="deleteHistoryItem(${i})">🗑️ ลบ</button></td>
             </tr>`;
         }
     }
@@ -586,26 +671,20 @@
             : (10 * weight) + (6.25 * height) - (5 * age) - 161;
         
         let tdee = Math.round(bmr * 1.3);
-        let status = "", carbRatio, proteinRatio, fatRatio, menuCarbs, menuProtein, menuSides;
+        let status = "", carbRatio, proteinRatio, fatRatio;
 
         if (bmi < 18.5) {
             status = "น้ำหนักน้อยกว่าเกณฑ์ 🟡"; tdee += 300;
+            currentBmiCategory = "underweight";
             carbRatio = 50; proteinRatio = 30; fatRatio = 20;
-            menuCarbs = "🍚 ข้าวญี่ปุ่นนุ่มๆ คลุกงาหอมๆ";
-            menuProtein = "🍳 หมูสไลด์ผัดซีอิ๊วซอสหวาน + ไข่ต้ม";
-            menuSides = "🥗 มันฝรั่งบด + ผัดผักน้ำมันงา";
         } else if (bmi < 23.0) {
             status = "น้ำหนักปกติ สุขภาพดี 🟢";
+            currentBmiCategory = "normal";
             carbRatio = 45; proteinRatio = 30; fatRatio = 25;
-            menuCarbs = "🍚 ข้าวกล้องไรซ์เบอร์รี่ 1.5 ทัพพี";
-            menuProtein = "🐟 ปลาแซลมอนย่างเกลือชิ้นพอดีคำ";
-            menuSides = "🥦 บล็อคโคลี่ต้ม + กิมจิเกาหลี";
         } else {
             status = "น้ำหนักเกินเกณฑ์ / อ้วน 🔴"; tdee -= 350;
+            currentBmiCategory = "overweight";
             carbRatio = 35; proteinRatio = 45; fatRatio = 20;
-            menuCarbs = "🌾 ข้าวบุกผสมข้าวกล้องน้อยพิเศษ (แป้งต่ำ)";
-            menuProtein = "🍗 อกไก่นึ่งฉีกสูตรโซเดียมต่ำ";
-            menuSides = "🥗 สลัดผักไฮโดรโปนิกส์ + น้ำสลัดซีอิ๊วใส";
         }
 
         document.getElementById('bento-bmi-status').innerText = status;
@@ -614,25 +693,54 @@
         document.getElementById('lunch-cal').innerText = Math.round(tdee * 0.4);
         document.getElementById('dinner-cal').innerText = Math.round(tdee * 0.3);
 
-        document.getElementById('bento-carbs').innerText = menuCarbs;
-        document.getElementById('bento-protein').innerText = menuProtein;
-        document.getElementById('bento-sides').innerText = menuSides;
+        // ⚖️ คำนวณอัตราส่วนสารอาหารออกมาเป็นหน่วย "กรัม"
+        const carbGrams = Math.round((tdee * (carbRatio / 100)) / 4);
+        const proteinGrams = Math.round((tdee * (proteinRatio / 100)) / 4);
+        const fatGrams = Math.round((tdee * (fatRatio / 100)) / 9);
 
+        document.getElementById('grams-carbs').innerText = carbGrams;
+        document.getElementById('grams-protein').innerText = proteinGrams;
+        document.getElementById('grams-fat').innerText = fatGrams;
+
+        // ดึงรายการเมนูมาสุ่มรอบแรก
+        resetAllMenus();
+        
+        // วาดกราฟวงกลมพร้อมเซ็ตชุดสีตามธีม แดง เหลือง ส้ม
         initPieChart(carbRatio, proteinRatio, fatRatio);
     }
 
-    /* 📊 ส่วนระบบกราฟเส้นแสดงข้อมูล (เปิดใช้งาน Plugin ตัวเลขบนจุดเส้นตรง) */
+    /* 🔄 ระบบสุ่มเปลี่ยนรายการอาหารเฉพาะอย่าง หรือทั้งหมด */
+    function resetSingleMenu(type) {
+        const pool = foodDatabase[currentBmiCategory][type];
+        const randomItem = pool[Math.floor(Math.random() * pool.length)];
+        document.getElementById(`bento-${type}`).innerText = randomItem;
+    }
+
+    function resetAllMenus() {
+        resetSingleMenu('carbs');
+        resetSingleMenu('protein');
+        resetSingleMenu('sides');
+    }
+
+    /* 📊 ระบบกราฟเส้นประวัติสะสมสเกลความละเอียดสูง + เปิดตารางกริดเบื้องหลัง */
     function initLineChart() {
         const ctx = document.getElementById('bmiChart').getContext('2d');
         if(bmiLineChart) { bmiLineChart.destroy(); }
         bmiLineChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'ค่า BMI สะสมของคุณ', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', tension: 0.1, fill: true }] },
+            data: { labels: [], datasets: [{ label: 'ค่า BMI สะสมของคุณ', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.1)', tension: 0.1, fill: true, pointRadius: 5, pointHoverRadius: 7 }] },
             options: { 
                 responsive: true, 
-                scales: { y: { min: 12, max: 38 } },
+                scales: { 
+                    x: {
+                        grid: { display: true, color: '#eef2f5' } // 🌟 แสดงกริดแนวตั้งเพื่อเพิ่มความละเอียดมิติเวลา
+                    },
+                    y: { 
+                        beginAtZero: false,
+                        grid: { display: true, color: '#eef2f5' } // 🌟 แสดงกริดแนวนอนช่วยให้เทียบตัวเลขทศนิยมง่ายขึ้นมากๆ
+                    } 
+                },
                 plugins: {
-                    // เปิดส่วนการทำงานแสดงตัวเลขค่าเลขเหนือนมาร์กเกอร์จุดกลมๆ
                     datalabels: {
                         align: 'top',
                         anchor: 'end',
@@ -641,7 +749,7 @@
                         color: 'white',
                         font: { weight: 'bold', size: 11 },
                         padding: 4,
-                        formatter: function(value) { return value; } // ให้ดึงตัวเลขค่า BMI มาแสดงโดยตรง
+                        formatter: function(value) { return value; }
                     }
                 }
             }
@@ -655,18 +763,27 @@
         bmiLineChart.update();
     }
 
+    /* 🍕 แผนภูมิวงกลมเซ็ตโทน แดง เหลือง ส้ม ตามกำหนด */
     function initPieChart(carbs, protein, fat) {
         const ctx = document.getElementById('macroPieChart').getContext('2d');
         if (macroPieChart) { macroPieChart.destroy(); }
         macroPieChart = new Chart(ctx, {
             type: 'pie',
             data: {
-                labels: [`คาร์บ (${carbs}%)`, `โปรตีน (${protein}%)`, `ไขมัน (${fat}%)`],
-                datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#2ecc71'] }]
+                labels: [`คาร์โบไฮเดรต (${carbs}%)`, `โปรตีน (${protein}%)`, `ไขมันดี (${fat}%)`],
+                datasets: [{ 
+                    data: [carbs, protein, fat], 
+                    backgroundColor: [
+                        '#f1c40f', // 🟡 คาร์โบไฮเดรต = สีเหลืองทอง
+                        '#e74c3c', // 🔴 โปรตีน = สีแดงเข้ม
+                        '#e67e22'  // 🟠 ไขมันดี = สีส้มอบอุ่น
+                    ],
+                    borderWidth: 2
+                }]
             },
             options: { 
                 responsive: true,
-                plugins: { datalabels: { display: false } } // สั่งปิดการแสดงตัวเลขลอยของหน้ากราฟวงกลมเพื่อไม่ให้รกตา
+                plugins: { datalabels: { display: false } }
             }
         });
     }
