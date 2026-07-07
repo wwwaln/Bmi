@@ -99,18 +99,27 @@
             font-weight: bold;
         }
 
-        /* --- สไตล์ส่วนแสดงกราฟและตาราง --- */
-        .chart-container {
-            position: relative;
-            margin: 20px 0;
+        /* --- สไตล์ส่วนแสดงกราฟแบบเลื่อนได้ไม่จำกัด (Scrollable Chart) --- */
+        .chart-outer-container {
             width: 100%;
-            height: 250px;
+            overflow-x: auto; /* เปิดให้เลื่อนซ้ายขวาได้เมื่อกราฟยาวเกินหน้าจอ */
+            margin: 20px 0;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            background: #fafafa;
         }
 
+        .chart-inner-container {
+            position: relative;
+            height: 280px;
+            min-width: 100%; /* ขนาดความกว้างจะถูกขยายอัตโนมัติด้วย JavaScript ตามจำนวนข้อมูล */
+        }
+
+        /* --- สไตล์ตารางและการลบข้อมูล --- */
         .table-responsive {
             overflow-x: auto;
             margin-top: 20px;
-            max-height: 180px;
+            max-height: 220px;
             border: 1px solid #ddd;
             border-radius: 5px;
         }
@@ -132,6 +141,7 @@
             background-color: #f8f9fa;
             position: sticky;
             top: 0;
+            z-index: 10;
         }
 
         .badge {
@@ -140,6 +150,23 @@
             padding: 3px 8px;
             border-radius: 3px;
             font-weight: bold;
+        }
+
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: normal;
+            margin-top: 0;
+            width: auto;
+        }
+
+        .btn-delete:hover {
+            background: #bd2130;
         }
 
         /* --- สไตล์ระบบเมนูด้านล่าง (Bottom Navigation) --- */
@@ -310,9 +337,12 @@
             </form>
 
             <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
-            <h3>กราฟแนวโน้มค่า BMI ของคุณ</h3>
-            <div class="chart-container">
-                <canvas id="bmiChart"></canvas>
+            <h3>กราฟแนวโน้มค่า BMI (เลื่อนขวาเพื่อดูข้อมูลล่าสุด)</h3>
+            
+            <div class="chart-outer-container" id="chart-outer">
+                <div class="chart-inner-container" id="chart-inner">
+                    <canvas id="bmiChart"></canvas>
+                </div>
             </div>
 
             <h3>ประวัติการประเมิน</h3>
@@ -326,6 +356,7 @@
                             <th>น้ำหนัก</th>
                             <th>ส่วนสูง</th>
                             <th>BMI</th>
+                            <th>จัดการ</th>
                         </tr>
                     </thead>
                     <tbody id="history-list"></tbody>
@@ -378,7 +409,7 @@
         document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); loginBox.classList.add('hidden'); registerBox.classList.remove('hidden'); });
         document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); registerBox.classList.add('hidden'); loginBox.classList.remove('hidden'); });
 
-        // ระบบเปลี่ยนรูปโปรไฟล์จากในโทรศัพท์/เครื่องคอมพิวเตอร์
+        // เปลี่ยนรูปโปรไฟล์
         document.getElementById('avatar-input').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
@@ -386,14 +417,13 @@
                 reader.onload = function(event) {
                     const base64Image = event.target.result;
                     document.getElementById('avatar-img').src = base64Image;
-                    // เซฟรูปภาพลงในเครื่องแยกตามชื่อผู้ใช้
                     localStorage.setItem('avatar_' + currentUser, base64Image);
                 };
                 reader.readAsDataURL(file);
             }
         });
 
-        // ระบบจัดการสลับแท็บเมนูด้านล่าง (หน้าหลัก <-> ตั้งค่า)
+        // สลับแท็บเมนู
         const navDashBtn = document.getElementById('nav-dash-btn');
         const navSetBtn = document.getElementById('nav-set-btn');
 
@@ -402,7 +432,7 @@
             navSetBtn.classList.remove('active');
             tabDashboard.classList.remove('hidden');
             tabSettings.classList.add('hidden');
-            displayHistoryAndChart(); // อัปเดตกราฟเผื่อมีการเปลี่ยนแปลง
+            displayHistoryAndChart(); 
         });
 
         navSetBtn.addEventListener('click', () => {
@@ -410,7 +440,7 @@
             navDashBtn.classList.remove('active');
             tabDashboard.classList.add('hidden');
             tabSettings.classList.remove('hidden');
-            updateProfilePage(); // อัปเดตข้อมูลผู้ใช้ในหน้าโปรไฟล์
+            updateProfilePage(); 
         });
 
         // สมัครสมาชิก
@@ -434,12 +464,10 @@
 
             if (savedPassword && savedPassword === password) {
                 currentUser = username;
-                
                 loginBox.classList.add('hidden');
                 tabDashboard.classList.remove('hidden');
-                appNav.classList.remove('hidden'); // แสดงเมนูด้านล่าง
+                appNav.classList.remove('hidden');
                 
-                // โหลดรูปโปรไฟล์ที่เคยเซฟไว้ (ถ้ามี)
                 const savedAvatar = localStorage.getItem('avatar_' + currentUser);
                 document.getElementById('avatar-img').src = savedAvatar ? savedAvatar : "https://via.placeholder.com/120";
 
@@ -449,7 +477,7 @@
             }
         });
 
-        // ระบบบันทึกข้อมูลและคำนวณอัตโนมัติ
+        // บันทึกข้อมูลและคำนวณอัตโนมัติ
         document.getElementById('bmi-form').addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -466,26 +494,40 @@
             const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
             let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            history.push({ date, gender, age, weight, height, bmi, birthYear });
             
+            // สร้างไอดีแบบสุ่ม (Timestamp) เพื่อใช้ระบุแถวตอนสั่งลบ
+            const uniqueId = Date.now().toString();
+            
+            history.push({ id: uniqueId, date, gender, age, weight, height, bmi, birthYear });
             history.sort((a, b) => new Date(a.date) - new Date(b.date));
             localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
 
             alert(`บันทึกสำเร็จ! ค่า BMI ของคุณคือ ${bmi}`);
-            
             document.getElementById('health-weight').value = "";
             document.getElementById('health-height').value = "";
             
             displayHistoryAndChart(); 
         });
 
-        // ฟังก์ชันอัปเดตข้อมูลภาพรวมในหน้าโปรไฟล์
+        // ฟังก์ชันลบข้อมูลรายวัน
+        function deleteRecord(id) {
+            if (confirm('คุณแน่ใจใช่ไหมว่าต้องการลบข้อมูลของวันนี้ทิ้ง?')) {
+                let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
+                // กรองเอาตัวที่มี ID ไม่ตรงกับที่ส่งมาเก็บไว้ (ตัวที่ตรงจะโดนลบออก)
+                history = history.filter(item => item.id !== id);
+                localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
+                
+                // โหลดหน้าจอใหม่ทันทีหลังลบเสร็จ
+                displayHistoryAndChart();
+            }
+        }
+
+        // อัปเดตข้อมูลหน้าโปรไฟล์
         function updateProfilePage() {
             document.getElementById('prof-username').innerText = currentUser;
             let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
 
             if (history.length > 0) {
-                // ดึงข้อมูลล่าสุดตัวท้ายสุดของอาร์เรย์มาแสดงผล
                 let latest = history[history.length - 1];
                 document.getElementById('prof-gender').innerText = latest.gender;
                 document.getElementById('prof-age').innerText = latest.age + " ปี";
@@ -493,7 +535,6 @@
                 document.getElementById('prof-height').innerText = latest.height;
                 document.getElementById('prof-bmi').innerText = latest.bmi;
             } else {
-                // ถ้ายังไม่เคยกรอกข้อมูลอะไรเลย
                 document.getElementById('prof-gender').innerText = "ยังไม่มีข้อมูล";
                 document.getElementById('prof-age').innerText = "ยังไม่มีข้อมูล";
                 document.getElementById('prof-weight').innerText = "-";
@@ -502,7 +543,7 @@
             }
         }
 
-        // แสดงประวัติและกราฟ
+        // แสดงประวัติและวาดกราฟไร้ขีดจำกัด
         function displayHistoryAndChart() {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = ""; 
@@ -512,7 +553,7 @@
             let chartData = [];
 
             if (history.length === 0) {
-                historyList.innerHTML = `<tr><td colspan="6" style="color:#888;">ยังไม่มีประวัติข้อมูลสุขภาพ</td></tr>`;
+                historyList.innerHTML = `<tr><td colspan="7" style="color:#888;">ยังไม่มีประวัติข้อมูลสุขภาพ</td></tr>`;
                 updateChart(chartLabels, chartData);
                 return;
             }
@@ -521,6 +562,7 @@
                 chartLabels.push(item.date);
                 chartData.push(item.bmi);
 
+                // เพิ่มปุ่มลบ (deleteRecord) ลงในคอลัมน์สุดท้ายของแต่ละแถว
                 const row = `<tr>
                     <td>${item.date}</td>
                     <td>${item.gender}</td>
@@ -528,14 +570,31 @@
                     <td>${item.weight}</td>
                     <td>${item.height}</td>
                     <td><span class="badge">${item.bmi}</span></td>
+                    <td><button class="btn-delete" onclick="deleteRecord('${item.id}')">ลบ ❌</button></td>
                 </tr>`;
                 historyList.innerHTML += row;
             });
 
+            // ปรับความกว้างของพื้นที่กราฟอัตโนมัติตามจำนวนข้อมูล (Infinite / Continuous Graph)
+            // ยิ่งข้อมูลเยอะ กราฟจะยิ่งขยายไปทางขวาเพื่อให้มีพื้นที่วาด ไม่บีบอัดกันจนเละ
+            const innerChartContainer = document.getElementById('chart-inner');
+            if (chartLabels.length > 7) {
+                const dynamicWidth = chartLabels.length * 50; // เพิ่มพื้นที่ 50px ต่อ 1 จุดข้อมูล
+                innerChartContainer.style.width = dynamicWidth + "px";
+            } else {
+                innerChartContainer.style.width = "100%";
+            }
+
             updateChart(chartLabels, chartData);
+
+            // เมื่อกราฟอัปเดต ให้ระบบเลื่อนสกรอลล์บาร์ไปขวาสุดโดยอัตโนมัติ เพื่อให้ผู้ใช้เห็นข้อมูลล่าสุดของวันนี้ทันที
+            setTimeout(() => {
+                const outerContainer = document.getElementById('chart-outer');
+                outerContainer.scrollLeft = outerContainer.scrollWidth;
+            }, 100);
         }
 
-        // วาดกราฟ
+        // ฟังก์ชันวาดกราฟ
         function updateChart(labels, data) {
             const ctx = document.getElementById('bmiChart').getContext('2d');
             if (bmiChart) { bmiChart.destroy(); }
@@ -560,7 +619,7 @@
             });
         }
 
-        // ปุ่มออกจากระบบ (ย้ายมาอยู่ด้านในหน้าตั้งค่าแล้ว)
+        // ออกจากระบบ
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = "";
             if (bmiChart) { bmiChart.destroy(); bmiChart = null; }
@@ -568,13 +627,11 @@
             document.getElementById('bmi-form').reset();
             document.getElementById('avatar-input').value = "";
             
-            // รีเซ็ตหน้ากลับไปเริ่มต้น
             tabDashboard.classList.add('hidden');
             tabSettings.classList.add('hidden');
             appNav.classList.add('hidden');
             loginBox.classList.remove('hidden');
             
-            // คืนค่าปุ่มเมนูด้านล่างให้กลับมาปุ่มแรก
             navDashBtn.classList.add('active');
             navSetBtn.classList.remove('active');
         });
