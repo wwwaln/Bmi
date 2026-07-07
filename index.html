@@ -3,826 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึก BMI และแนะนำเมนูเบนโตะโภชนาการ</title>
+    <title>ระบบบันทึก BMI และโภชนาการส่วนบุคคล</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: #f4f6f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 10px;
-            padding-bottom: 80px; 
-        }
-
-        .container {
-            background: #ffffff;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-
-        h2, h3 {
-            text-align: center;
-            margin-bottom: 20px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-            margin-bottom: 0;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #007bff;
-            border: none;
-            color: white;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        button:hover {
-            background: #0056b3;
-        }
-
-        .switch-text {
-            text-align: center;
-            margin-top: 15px;
-            font-size: 14px;
-            color: #555;
-        }
-
-        .switch-text a {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        /* --- สไตล์ส่วนแสดงกราฟเส้นเลื่อนได้ --- */
-        .chart-outer-container {
-            width: 100%;
-            overflow-x: auto; 
-            margin: 20px 0;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            background: #fafafa;
-        }
-
-        .chart-inner-container {
-            position: relative;
-            height: 250px;
-            min-width: 100%; 
-        }
-
-        /* --- สไตล์แสดงค่า BMI แบบสวยงามการ์ด --- */
-        .bmi-result-card {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(37, 117, 252, 0.2);
-        }
-
-        .bmi-number {
-            font-size: 42px;
-            font-weight: bold;
-            margin: 10px 0;
-        }
-
-        .bmi-status-text {
-            font-size: 18px;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            display: inline-block;
-        }
-
-        /* --- ดีไซน์กล่องข้าวเบนโตะจำลอง --- */
-        .bento-box {
-            border: 4px solid #d9534f;
-            border-radius: 15px;
-            background: #fff5f5;
-            padding: 15px;
-            margin-top: 20px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
-        }
-
-        .bento-header {
-            background: #d9534f;
-            color: white;
-            text-align: center;
-            padding: 5px;
-            border-radius: 5px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
-
-        .bento-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
-        .bento-compartment {
-            background: white;
-            border: 2px dashed #d9534f;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 100px;
-        }
-
-        .bento-title {
-            font-size: 12px;
-            color: #d9534f;
-            font-weight: bold;
-            border-bottom: 1px dashed #d9534f;
-            margin-bottom: 5px;
-        }
-
-        .bento-food-name {
-            font-weight: bold;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .bento-amount {
-            font-size: 12px;
-            color: #666;
-            margin-top: 3px;
-        }
-
-        /* --- สไตล์แผนภูมิวงกลมสารอาหาร --- */
-        .pie-container {
-            width: 220px;
-            height: 220px;
-            margin: 0 auto 20px auto;
-        }
-
-        /* --- สไตล์ตารางประวัติ --- */
-        .table-responsive {
-            overflow-x: auto;
-            margin-top: 20px;
-            max-height: 180px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        th, td {
-            border-bottom: 1px solid #ddd;
-            padding: 10px;
-            text-align: center;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-
-        th {
-            background-color: #f8f9fa;
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
-        .btn-delete {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 5px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        /* --- ระบบเมนูด้านล่าง (เพิ่มปุ่มเมนูโภชนาการ) --- */
-        .nav-bar {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 600px;
-            background: #ffffff;
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-            z-index: 999;
-        }
-
-        .nav-item {
-            flex: 1;
-            text-align: center;
-            background: none;
-            border: none;
-            color: #666;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        .nav-item.active {
-            color: #007bff;
-            font-weight: bold;
-        }
-
-        /* --- สไตล์การ์ดโปรไฟล์ --- */
-        .profile-card { text-align: center; padding: 20px 10px; }
-        .avatar-container { position: relative; width: 110px; height: 110px; margin: 0 auto 15px auto; }
-        .profile-avatar { width: 110px; height: 110px; border-radius: 50%; object-fit: cover; border: 3px solid #007bff; }
-        .profile-info-box { background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: left; margin-top: 15px; border: 1px solid #e9ecef; }
-        .profile-info-item { margin-bottom: 10px; font-size: 15px; color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f4f6f9; display: flex; justify-content: center; min-height: 100vh; padding: 10px; padding-bottom: 80px; }
+        .container { background: #ffffff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 600px; }
         .hidden { display: none !important; }
+        h2, h3 { text-align: center; margin-bottom: 20px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; }
+        button { width: 100%; padding: 12px; background: #007bff; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .bmi-result-card { color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
+        .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .bento-compartment { background: white; border: 2px dashed #d9534f; border-radius: 8px; padding: 10px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 600px; background: #fff; display: flex; justify-content: space-around; padding: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 999; }
+        .nav-item.active { color: #007bff; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div id="login-box">
-            <h2>เข้าสู่ระบบ</h2>
-            <form id="login-form">
-                <div class="form-group">
-                    <label>ชื่อผู้ใช้</label>
-                    <input type="text" id="login-username" required placeholder="กรอกชื่อผู้ใช้">
-                </div>
-                <div class="form-group">
-                    <label>รหัสผ่าน</label>
-                    <input type="password" id="login-password" required placeholder="กรอกรหัสผ่าน">
-                </div>
-                <button type="submit">เข้าสู่ระบบ</button>
-            </form>
-            <div class="switch-text">ยังไม่มีบัญชีใช่ไหม? <a href="#" id="to-register">สร้างบัญชีผู้ใช้</a></div>
-        </div>
-
-        <div id="register-box" class="hidden">
-            <h2>สร้างบัญชีผู้ใช้ใหม่</h2>
-            <form id="register-form">
-                <div class="form-group">
-                    <label>ชื่อผู้ใช้</label>
-                    <input type="text" id="reg-username" required placeholder="ตั้งชื่อผู้ใช้">
-                </div>
-                <div class="form-group">
-                    <label>รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
-                    <input type="password" id="reg-password" minlength="8" required placeholder="ตั้งรหัสผ่าน">
-                </div>
-                <button type="submit">สมัครสมาชิก</button>
-            </form>
-            <div class="switch-text">มีบัญชีอยู่แล้ว? <a href="#" id="to-login">เข้าสู่ระบบที่นี่</a></div>
-        </div>
-
-        <div id="tab-dashboard" class="hidden">
-            <h2>บันทึกข้อมูลสุขภาพรายวัน</h2>
-            <form id="bmi-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>วันที่บันทึก</label>
-                        <input type="date" id="health-date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>เพศ</label>
-                        <select id="health-gender" required>
-                            <option value="">เลือกเพศ</option>
-                            <option value="ชาย">ชาย</option>
-                            <option value="หญิง">หญิง</option>
-                            <option value="อื่นๆ">อื่นๆ</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>ปีเกิด (ค.ศ.)</label>
-                        <input type="number" id="health-birthyear" min="1900" max="2026" required placeholder="ค.ศ. เกิด">
-                    </div>
-                    <div class="form-group">
-                        <label>น้ำหนัก (กก.)</label>
-                        <input type="number" id="health-weight" step="0.1" min="1" required placeholder="เช่น 65.5">
-                    </div>
-                    <div class="form-group">
-                        <label>ส่วนสูง (ซม.)</label>
-                        <input type="number" id="health-height" step="0.1" min="1" required placeholder="เช่น 170">
-                    </div>
-                </div>
-                <button type="submit" style="background: #28a745;">คำนวณและบันทึกข้อมูล</button>
-            </form>
-
-            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
-            <h3>กราฟแนวโน้มค่า BMI</h3>
-            <div class="chart-outer-container" id="chart-outer">
-                <div class="chart-inner-container" id="chart-inner">
-                    <canvas id="bmiChart"></canvas>
-                </div>
-            </div>
-
-            <h3>ประวัติการประเมิน</h3>
-            <div class="table-responsive">
-                <table id="history-table">
-                    <thead>
-                        <tr>
-                            <th>วันที่</th>
-                            <th>เพศ</th>
-                            <th>อายุ</th>
-                            <th>น้ำหนัก</th>
-                            <th>ส่วนสูง</th>
-                            <th>BMI</th>
-                            <th>จัดการ</th>
-                        </tr>
-                    </thead>
-                    <tbody id="history-list"></tbody>
-                </table>
-            </div>
-        </div>
-
-        <div id="tab-nutrition" class="hidden">
-            <h2>คำแนะนำโภชนาการวันนี้</h2>
-            
-            <div class="bmi-result-card" id="bmi-card">
-                <div>ค่า BMI ล่าสุดของคุณคือ</div>
-                <div class="bmi-number" id="nutr-bmi-val">22.5</div>
-                <div class="bmi-status-text" id="nutr-bmi-status">อยู่ในเกณฑ์ปกติ</div>
-            </div>
-
-            <h3>สัดส่วนพลังงานสารอาหารที่แนะนำ</h3>
-            <div class="pie-container">
-                <canvas id="nutrientPieChart"></canvas>
-            </div>
-
-            <div class="bento-box">
-                <div class="bento-header">🍱 กล่องข้าวเบนโตะโภชนาการสำหรับคุณ</div>
-                <div class="bento-grid">
-                    <div class="bento-compartment">
-                        <div class="bento-title">พลังงานหลัก (คาร์โบไฮเดรต)</div>
-                        <div class="bento-food-name" id="bento-carb-name">-</div>
-                        <div class="bento-amount" id="bento-carb-qty">-</div>
-                    </div>
-                    <div class="bento-compartment">
-                        <div class="bento-title">เนื้อสัตว์/โปรตีนเสริมสร้าง</div>
-                        <div class="bento-food-name" id="bento-protein-name">-</div>
-                        <div class="bento-amount" id="bento-protein-qty">-</div>
-                    </div>
-                    <div class="bento-compartment">
-                        <div class="bento-title">ผัก/วิตามินแร่ธาตุ</div>
-                        <div class="bento-food-name" id="bento-veg-name">-</div>
-                        <div class="bento-amount" id="bento-veg-qty">-</div>
-                    </div>
-                    <div class="bento-compartment">
-                        <div class="bento-title">ไขมันดี/ผลไม้ล้างปาก</div>
-                        <div class="bento-food-name" id="bento-fat-name">-</div>
-                        <div class="bento-amount" id="bento-fat-qty">-</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="tab-settings" class="hidden">
-            <h2>การตั้งค่าและโปรไฟล์</h2>
-            <div class="profile-card">
-                <div class="avatar-container">
-                    <img id="avatar-img" class="profile-avatar" src="https://via.placeholder.com/120" alt="โปรไฟล์">
-                </div>
-                <div class="upload-btn-wrapper">
-                    <input type="file" id="avatar-input" accept="image/*">
-                </div>
-                <div class="profile-info-box">
-                    <div class="profile-info-item">ชื่อผู้ใช้: <strong id="prof-username">-</strong></div>
-                    <div class="profile-info-item">เพศล่าสุด: <strong id="prof-gender">-</strong></div>
-                    <div class="profile-info-item">อายุ: <strong id="prof-age">-</strong></div>
-                    <div class="profile-info-item">น้ำหนักล่าสุด: <strong id="prof-weight">-</strong> กิโลกรัม</div>
-                    <div class="profile-info-item">ส่วนสูงล่าสุด: <strong id="prof-height">-</strong> เซนติเมตร</div>
-                    <div class="profile-info-item">ค่า BMI ล่าสุด: <strong id="prof-bmi">-</strong></div>
-                </div>
-                <button id="logout-btn" style="background: #dc3545; margin-top: 30px;">ออกจากระบบ (Log out)</button>
-            </div>
-        </div>
+<div class="container">
+    <div id="login-box">
+        <h2>เข้าสู่ระบบ</h2>
+        <form id="login-form">
+            <input type="text" id="login-username" required placeholder="ชื่อผู้ใช้">
+            <input type="password" id="login-password" required placeholder="รหัสผ่าน">
+            <button type="submit">เข้าสู่ระบบ</button>
+        </form>
     </div>
 
-    <div id="app-nav" class="nav-bar hidden">
-        <button class="nav-item active" id="nav-dash-btn">🏠 บันทึก/กราฟ</button>
-        <button class="nav-item" id="nav-nutr-btn">🍱 แนะนำเบนโตะ</button>
-        <button class="nav-item" id="nav-set-btn">⚙️ โปรไฟล์</button>
+    <div id="tab-dashboard" class="hidden">
+        <h2>บันทึกข้อมูลสุขภาพ</h2>
+        <form id="bmi-form">
+            <input type="date" id="health-date" required>
+            <select id="health-gender" required>
+                <option value="ชาย">ชาย</option>
+                <option value="หญิง">หญิง</option>
+            </select>
+            <input type="number" id="health-birthyear" placeholder="ปีเกิด ค.ศ." required>
+            <input type="number" id="health-weight" step="0.1" placeholder="น้ำหนัก (กก.)" required>
+            <input type="number" id="health-height" step="0.1" placeholder="ส่วนสูง (ซม.)" required>
+            <button type="submit" style="background: #28a745;">บันทึกข้อมูล</button>
+        </form>
     </div>
 
-    <script>
-        const loginBox = document.getElementById('login-box');
-        const registerBox = document.getElementById('register-box');
-        const tabDashboard = document.getElementById('tab-dashboard');
-        const tabNutrition = document.getElementById('tab-nutrition');
-        const tabSettings = document.getElementById('tab-settings');
-        const appNav = document.getElementById('app-nav');
+    <div id="tab-nutrition" class="hidden">
+        <h2>คำแนะนำโภชนาการ</h2>
+        <div class="bmi-result-card" id="bmi-card">
+            <div id="nutr-bmi-val" style="font-size: 30px; font-weight: bold;">-</div>
+            <div id="nutr-bmi-status">-</div>
+        </div>
+        <div style="height: 200px;"><canvas id="nutrientPieChart"></canvas></div>
+        <div class="bento-grid" style="margin-top:20px;">
+            <div class="bento-compartment"><div id="bento-carb-name" style="font-weight:bold;">-</div><div id="bento-carb-qty" style="font-size: 12px;">-</div></div>
+            <div class="bento-compartment"><div id="bento-protein-name" style="font-weight:bold;">-</div><div id="bento-protein-qty" style="font-size: 12px;">-</div></div>
+            <div class="bento-compartment"><div id="bento-veg-name" style="font-weight:bold;">-</div><div id="bento-veg-qty" style="font-size: 12px;">-</div></div>
+            <div class="bento-compartment"><div id="bento-fat-name" style="font-weight:bold;">-</div><div id="bento-fat-qty" style="font-size: 12px;">-</div></div>
+        </div>
+    </div>
+</div>
+
+<div id="app-nav" class="nav-bar hidden">
+    <button class="nav-item" onclick="switchTab('dashboard')">🏠 บันทึก</button>
+    <button class="nav-item" onclick="switchTab('nutrition')">🍱 โภชนาการ</button>
+</div>
+
+<script>
+    let currentUser = "";
+    let pieChart = null;
+
+    document.getElementById('login-form').onsubmit = (e) => {
+        e.preventDefault();
+        currentUser = document.getElementById('login-username').value;
+        document.getElementById('login-box').classList.add('hidden');
+        document.getElementById('app-nav').classList.remove('hidden');
+        switchTab('dashboard');
+    };
+
+    document.getElementById('bmi-form').onsubmit = (e) => {
+        e.preventDefault();
+        const weight = parseFloat(document.getElementById('health-weight').value);
+        const height = parseFloat(document.getElementById('health-height').value) / 100;
+        const bmi = (weight / (height * height)).toFixed(1);
+        const gender = document.getElementById('health-gender').value;
+        const age = 2026 - parseInt(document.getElementById('health-birthyear').value);
         
-        let currentUser = ""; 
-        let bmiChart = null; 
-        let pieChart = null;
+        localStorage.setItem('last_data', JSON.stringify({bmi, weight, height: height*100, gender, age}));
+        switchTab('nutrition');
+    };
 
-        document.getElementById('health-date').valueAsDate = new Date();
+    function switchTab(tab) {
+        document.getElementById('tab-dashboard').classList.add('hidden');
+        document.getElementById('tab-nutrition').classList.add('hidden');
+        if(tab === 'dashboard') document.getElementById('tab-dashboard').classList.remove('hidden');
+        else { document.getElementById('tab-nutrition').classList.remove('hidden'); generateNutritionAdvice(); }
+    }
 
-        // สลับหน้า Login / Register
-        document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); loginBox.classList.add('hidden'); registerBox.classList.remove('hidden'); });
-        document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); registerBox.classList.add('hidden'); loginBox.classList.remove('hidden'); });
+    function generateNutritionAdvice() {
+        const data = JSON.parse(localStorage.getItem('last_data'));
+        if(!data) return;
+        
+        const bmr = (data.gender === 'ชาย') ? (10 * data.weight + 6.25 * data.height - 5 * data.age + 5) : (10 * data.weight + 6.25 * data.height - 5 * data.age - 161);
+        const tdee = Math.round(bmr * 1.375);
+        
+        const bmi = parseFloat(data.bmi);
+        let carbPct = 50, protPct = 25, fatPct = 25;
+        if(bmi < 18.5) { carbPct = 55; protPct = 25; fatPct = 20; }
+        else if(bmi > 23) { carbPct = 40; protPct = 35; fatPct = 25; }
 
-        // เปลี่ยนรูปโปรไฟล์
-        document.getElementById('avatar-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    const base64Image = event.target.result;
-                    document.getElementById('avatar-img').src = base64Image;
-                    localStorage.setItem('avatar_' + currentUser, base64Image);
-                };
-                reader.readAsDataURL(file);
-            }
+        document.getElementById('nutr-bmi-val').innerText = `BMI: ${bmi}`;
+        document.getElementById('nutr-bmi-status').innerHTML = `พลังงานที่ควรได้รับ: <strong>${tdee} kcal/วัน</strong>`;
+        document.getElementById('bmi-card').style.background = bmi < 18.5 ? '#f0ad4e' : (bmi > 23 ? '#d9534f' : '#28a745');
+
+        const items = [
+            {id: 'carb', name: 'คาร์โบไฮเดรต', val: Math.round(tdee * (carbPct/100) / 4) + ' kcal'},
+            {id: 'protein', name: 'โปรตีน', val: Math.round(tdee * (protPct/100) / 4) + ' kcal'},
+            {id: 'veg', name: 'ผัก/วิตามิน', val: 'เน้นกากใย'},
+            {id: 'fat', name: 'ไขมันดี', val: Math.round(tdee * (fatPct/100) / 9) + ' kcal'}
+        ];
+
+        items.forEach(i => {
+            document.getElementById(`bento-${i.id}-name`).innerText = i.name;
+            document.getElementById(`bento-${i.id}-qty`).innerText = i.val;
         });
 
-        // สลับแท็บเมนู
-        const navDashBtn = document.getElementById('nav-dash-btn');
-        const navNutrBtn = document.getElementById('nav-nutr-btn');
-        const navSetBtn = document.getElementById('nav-set-btn');
-
-        navDashBtn.addEventListener('click', () => switchTab('dashboard'));
-        navNutrBtn.addEventListener('click', () => switchTab('nutrition'));
-        navSetBtn.addEventListener('click', () => switchTab('settings'));
-
-        function switchTab(tabName) {
-            localStorage.setItem('current_tab_' + currentUser, tabName);
-            
-            // ล้างสถานะ active ทุกปุ่ม
-            navDashBtn.classList.remove('active');
-            navNutrBtn.classList.remove('active');
-            navSetBtn.classList.remove('active');
-            
-            // ซ่อนทุกหน้าต่าง
-            tabDashboard.classList.add('hidden');
-            tabNutrition.classList.add('hidden');
-            tabSettings.classList.add('hidden');
-
-            if (tabName === 'dashboard') {
-                navDashBtn.classList.add('active');
-                tabDashboard.classList.remove('hidden');
-                displayHistoryAndChart(); 
-            } else if (tabName === 'nutrition') {
-                navNutrBtn.classList.add('active');
-                tabNutrition.classList.remove('hidden');
-                generateNutritionAdvice(); // ประมวลผลสารอาหารและเมนูกล่องข้าว
-            } else {
-                navSetBtn.classList.add('active');
-                tabSettings.classList.remove('hidden');
-                updateProfilePage(); 
-            }
-        }
-
-        // สมัครสมาชิก
-        document.getElementById('register-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const username = document.getElementById('reg-username').value;
-            const password = document.getElementById('reg-password').value;
-            localStorage.setItem('user_' + username, password);
-            alert('สร้างบัญชีผู้ใช้สำเร็จแล้ว!');
-            document.getElementById('register-form').reset();
-            registerBox.classList.add('hidden');
-            loginBox.classList.remove('hidden');
-        });
-
-        // เข้าสู่ระบบ
-        document.getElementById('login-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            const savedPassword = localStorage.getItem('user_' + username);
-
-            if (savedPassword && savedPassword === password) {
-                loginSuccess(username);
-            } else {
-                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+        const ctx = document.getElementById('nutrientPieChart').getContext('2d');
+        if(pieChart) pieChart.destroy();
+        pieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: [`คาร์บ ${carbPct}%`, `โปรตีน ${protPct}%`, `ไขมัน ${fatPct}%`],
+                datasets: [{ data: [carbPct, protPct, fatPct], backgroundColor: ['#ffce56', '#ff6384', '#36a2eb'] }]
             }
         });
-
-        function loginSuccess(username) {
-            currentUser = username;
-            localStorage.setItem('session_user', username);
-            loginBox.classList.add('hidden');
-            appNav.classList.remove('hidden');
-            
-            const savedAvatar = localStorage.getItem('avatar_' + currentUser);
-            document.getElementById('avatar-img').src = savedAvatar ? savedAvatar : "https://via.placeholder.com/120";
-
-            const lastTab = localStorage.getItem('current_tab_' + currentUser) || 'dashboard';
-            switchTab(lastTab);
-        }
-
-        // บันทึกข้อมูลสุขภาพและคำนวณอัตโนมัติ
-        document.getElementById('bmi-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            
-            const date = document.getElementById('health-date').value;
-            const gender = document.getElementById('health-gender').value;
-            const birthYear = parseInt(document.getElementById('health-birthyear').value);
-            const weight = parseFloat(document.getElementById('health-weight').value);
-            const height = parseFloat(document.getElementById('health-height').value);
-
-            const currentYear = new Date().getFullYear();
-            const age = currentYear - birthYear;
-
-            const heightInMeters = height / 100;
-            const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
-
-            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            const uniqueId = Date.now().toString();
-            
-            history.push({ id: uniqueId, date, gender, age, weight, height, bmi, birthYear });
-            history.sort((a, b) => new Date(a.date) - new Date(b.date));
-            localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
-
-            alert(`บันทึกข้อมูลเรียบร้อยแล้ว!`);
-            document.getElementById('health-weight').value = "";
-            document.getElementById('health-height').value = "";
-            
-            // สลับเด้งไปยังหน้าแสดงโภชนาการ/เบนโตะ ทันทีหลังบันทึกเสร็จตามที่คุณต้องการ
-            switchTab('nutrition');
-        });
-
-        // ผูกปุ่มลบข้อมูล
-        function attachDeleteEvents() {
-            const deleteButtons = document.querySelectorAll('.btn-delete');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const id = this.getAttribute('data-id');
-                    if (confirm('คุณแน่ใจใช่ไหมว่าต้องการลบข้อมูลของวันนี้ทิ้ง?')) {
-                        let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-                        history = history.filter(item => item.id !== id);
-                        localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
-                        displayHistoryAndChart();
-                    }
-                });
-            });
-        }
-
-        // ฟังก์ชันประมวลผลคำแนะนำด้านโภชนาการ แผนภูมิวงกลม และเมนูกล่องข้าวเบนโตะ
-        function generateNutritionAdvice() {
-            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            
-            if (history.length === 0) {
-                document.getElementById('nutr-bmi-val').innerText = "-";
-                document.getElementById('nutr-bmi-status').innerText = "ยังไม่มีข้อมูลบันทึก";
-                document.getElementById('bmi-card').style.background = "#ccc";
-                return;
-            }
-
-            // ดึงข้อมูลล่าสุดมาประมวลโภชนาการ
-            let latest = history[history.length - 1];
-            const bmi = parseFloat(latest.bmi);
-            document.getElementById('nutr-bmi-val').innerText = bmi;
-
-            let statusStr = "";
-            let carbPct = 50, proteinPct = 25, fatPct = 25; // สัดส่วนสารอาหารเริ่มต้น (%)
-            let bento = { carb: "", carbQty: "", protein: "", proteinQty: "", veg: "", vegQty: "", fat: "", fatQty: "" };
-            let cardBg = "";
-
-            // ตรวจสอบเกณฑ์ BMI และจัดแต่งเมนูเบนโตะให้เหมาะสมกับสภาพร่างกาย
-            if (bmi < 18.5) {
-                statusStr = "น้ำหนักต่ำกว่าเกณฑ์ (ควรเพิ่มสารอาหาร)";
-                cardBg = "linear-gradient(135deg, #f0ad4e 0%, #f89406 100%)"; // ส้ม-เหลือง
-                carbPct = 55; proteinPct = 25; fatPct = 20; // เน้นคาร์โบไฮเดรตเพิ่มพลังงาน
-                bento = {
-                    carb: "ข้าวหอมมะลิเรียงเม็ดนุ่ม", carbQty: "ปริมาณ: 2 ทัพพีพูน (ประมาณ 160 กรัม)",
-                    protein: "อกไก่ย่างซอสเทริยากิฉ่ำๆ", proteinQty: "ปริมาณ: 120 กรัม (เพิ่มกล้ามเนื้อ)",
-                    veg: "ผักบล็อคโคลี่และแครอทผัดน้ำมันหอย", vegQty: "ปริมาณ: 1 ถ้วยตวงกิโลกรัม",
-                    fat: "ไข่ต้มยางมะตูม 1 ฟอง + กล้วยหอม", fatQty: "ปริมาณ: ไข่ 1 ฟอง / กล้วย 1 ลูกใหญ่"
-                };
-            } else if (bmi >= 18.5 && bmi < 23.0) {
-                statusStr = "น้ำหนักปกติ สุขภาพดีสมส่วน";
-                cardBg = "linear-gradient(135deg, #28a745 0%, #1e7e34 100%)"; // เขียวรักษาหุ่น
-                carbPct = 50; proteinPct = 25; fatPct = 25; // สัดส่วนสมดุลทั่วไป
-                bento = {
-                    carb: "ข้าวกล้องไรซ์เบอร์รี่ผสม", carbQty: "ปริมาณ: 1.5 ทัพพี (ประมาณ 110 กรัม)",
-                    protein: "ปลาซาบะย่างซีอิ๊วสไตล์ญี่ปุ่น", proteinQty: "ปริมาณ: 1 ชิ้นกลาง (ได้โปรตีนและโอเมก้า)",
-                    veg: "กะหล่ำปลีและเห็ดหอมผัดน้ำมันงา", vegQty: "ปริมาณ: 1 ถ้วยตวงเต็มมื้อ",
-                    fat: "ถั่วอัลมอนด์อบธรรมชาติ + ส้ม", fatQty: "ปริมาณ: อัลมอนด์ 10 เม็ด / ส้ม 1 ลูก"
-                };
-            } else if (bmi >= 23.0 && bmi < 25.0) {
-                statusStr = "น้ำหนักเกินเกณฑ์ (ควรเริ่มควบคุม)";
-                cardBg = "linear-gradient(135deg, #f39c12 0%, #d35400 100%)"; // ส้มแก่
-                carbPct = 45; proteinPct = 30; fatPct = 25; // ลดแป้ง เพิ่มโปรตีนให้อิ่มท้อง
-                bento = {
-                    carb: "ข้าวไรซ์เบอร์รี่ล้วนน้ำตาลต่ำ", carbQty: "ปริมาณ: 1 ทัพพีบาง (ประมาณ 80 กรัม)",
-                    protein: "เต้าหู้ขาวและอกไก่นึ่งซีอิ๊วขาว", proteinQty: "ปริมาณ: อกไก่ 100 กรัม + เต้าหู้ครึ่งก้อน",
-                    veg: "ผักกาดขาวและกวางตุ้งลวกจิ้มแจ่ว", vegQty: "ปริมาณ: ทานได้เต็มที่ 1.5 ถ้วยตวง",
-                    fat: "อะโวคาโดหั่นเต๋า + แอปเปิ้ลเขียว", fatQty: "ปริมาณ: อะโวคาโด 1/4 ลูก / แอปเปิ้ลครึ่งลูก"
-                };
-            } else {
-                statusStr = "อยู่ในเกณฑ์อ้วน (เน้นคุมคาร์บและไขมัน)";
-                cardBg = "linear-gradient(135deg, #d9534f 0%, #962d2a 100%)"; // แดง
-                carbPct = 40; proteinPct = 35; fatPct = 25; // ลดแป้งลงเพื่อใช้ไขมันสะสมเก่า
-                bento = {
-                    carb: "เส้นบุกหรือควินัวผสมข้าวกล้องน้อย", carbQty: "ปริมาณ: ข้าวผสมครึ่งทัพพี (ประมาณ 50 กรัม)",
-                    protein: "ปลากะพงนึ่งมะนาวเนื้อขาวล้วน", proteinQty: "ปริมาณ: 1 ชิ้นใหญ่ (ย่อยง่าย ไขมันต่ำมาก)",
-                    veg: "สลัดผักไฮโดรโปนิกส์หลากสีสัน", vegQty: "ปริมาณ: 2 ถ้วยตวง (น้ำสลัดใส 1 ช้อนชา)",
-                    fat: "ฝรั่งสดสไลด์บาง (วิตามินซีสูง ขนมว่าง)", fatQty: "ปริมาณ: ฝรั่งครึ่งลูก (งดของมันของทอดเด็ดขาด)"
-                };
-            }
-
-            document.getElementById('nutr-bmi-status').innerText = statusStr;
-            document.getElementById('bmi-card').style.background = cardBg;
-
-            // ใส่ข้อมูลลงใน Compartment ของกล่องข้าวเบนโตะบนหน้าจอ
-            document.getElementById('bento-carb-name').innerText = bento.carb;
-            document.getElementById('bento-carb-qty').innerText = bento.carbQty;
-            document.getElementById('bento-protein-name').innerText = bento.protein;
-            document.getElementById('bento-protein-qty').innerText = bento.proteinQty;
-            document.getElementById('bento-veg-name').innerText = bento.veg;
-            document.getElementById('bento-veg-qty').innerText = bento.vegQty;
-            document.getElementById('bento-fat-name').innerText = bento.fat;
-            document.getElementById('bento-fat-qty').innerText = bento.fatQty;
-
-            // วาดแผนภูมิวงกลมสารอาหาร (Pie Chart)
-            const ctxPie = document.getElementById('nutrientPieChart').getContext('2d');
-            if (pieChart) { pieChart.destroy(); }
-            pieChart = new Chart(ctxPie, {
-                type: 'pie',
-                data: {
-                    labels: ['คาร์โบไฮเดรต (%)', 'โปรตีน (%)', 'ไขมัน (%)'],
-                    datasets: [{
-                        data: [carbPct, proteinPct, fatPct],
-                        backgroundColor: ['#ffce56', '#ff6384', '#36a2eb'],
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-        }
-
-        // แสดงสถิติตารางและกราฟเส้น
-        function displayHistoryAndChart() {
-            const historyList = document.getElementById('history-list');
-            historyList.innerHTML = ""; 
-
-            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            let chartLabels = [];
-            let chartData = [];
-
-            if (history.length === 0) {
-                historyList.innerHTML = `<tr><td colspan="7" style="color:#888;">ยังไม่มีประวัติข้อมูลสุขภาพ</td></tr>`;
-                updateLineChart(chartLabels, chartData);
-                return;
-            }
-
-            history.forEach(item => {
-                chartLabels.push(item.date);
-                chartData.push(parseFloat(item.bmi));
-
-                const row = `<tr>
-                    <td>${item.date}</td>
-                    <td>${item.gender}</td>
-                    <td>${item.age} ปี</td>
-                    <td>${item.weight}</td>
-                    <td>${item.height}</td>
-                    <td><b style="color:#007bff">${item.bmi}</b></td>
-                    <td><button class="btn-delete" data-id="${item.id}">ลบ ❌</button></td>
-                </tr>`;
-                historyList.innerHTML += row;
-            });
-
-            const innerChartContainer = document.getElementById('chart-inner');
-            if (chartLabels.length > 7) {
-                innerChartContainer.style.width = (chartLabels.length * 60) + "px";
-            } else {
-                innerChartContainer.style.width = "100%";
-            }
-
-            updateLineChart(chartLabels, chartData);
-            attachDeleteEvents(); 
-
-            setTimeout(() => {
-                const outerContainer = document.getElementById('chart-outer');
-                outerContainer.scrollLeft = outerContainer.scrollWidth;
-            }, 100);
-        }
-
-        function updateLineChart(labels, data) {
-            const ctx = document.getElementById('bmiChart').getContext('2d');
-            if (bmiChart) { bmiChart.destroy(); }
-
-            let minY = 10, maxY = 40;
-            if (data.length > 0) {
-                minY = Math.min(...data) - 1;
-                maxY = Math.max(...data) + 1;
-            }
-
-            bmiChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'ค่า BMI รายวัน',
-                        data: data,
-                        borderColor: '#007bff',
-                        backgroundColor: 'rgba(0, 123, 255, 0.05)',
-                        borderWidth: 3,
-                        tension: 0.2,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: { y: { min: Math.floor(minY), max: Math.ceil(maxY) } }
-                }
-            });
-        }
-
-        function updateProfilePage() {
-            document.getElementById('prof-username').innerText = currentUser;
-            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            if (history.length > 0) {
-                let latest = history[history.length - 1];
-                document.getElementById('prof-gender').innerText = latest.gender;
-                document.getElementById('prof-age').innerText = latest.age + " ปี";
-                document.getElementById('prof-weight').innerText = latest.weight;
-                document.getElementById('prof-height').innerText = latest.height;
-                document.getElementById('prof-bmi').innerText = latest.bmi;
-            } else {
-                document.getElementById('prof-gender').innerText = "ไม่มีข้อมูล";
-                document.getElementById('prof-age').innerText = "ไม่มีข้อมูล";
-                document.getElementById('prof-weight').innerText = "-";
-                document.getElementById('prof-height').innerText = "-";
-                document.getElementById('prof-bmi').innerText = "-";
-            }
-        }
-
-        // ล็อกเอาต์ ออกจากระบบ
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            currentUser = "";
-            localStorage.removeItem('session_user');
-            if (bmiChart) { bmiChart.destroy(); bmiChart = null; }
-            if (pieChart) { pieChart.destroy(); pieChart = null; }
-            document.getElementById('login-form').reset();
-            document.getElementById('bmi-form').reset();
-            document.getElementById('avatar-input').value = "";
-            
-            tabDashboard.classList.add('hidden');
-            tabNutrition.classList.add('hidden');
-            tabSettings.classList.add('hidden');
-            appNav.classList.add('hidden');
-            loginBox.classList.remove('hidden');
-            registerBox.classList.add('hidden');
-        });
-
-        // ตรวจสอบ Auto Login
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedSessionUser = localStorage.getItem('session_user');
-            if (savedSessionUser) { loginSuccess(savedSessionUser); }
-        });
-    </script>
+    }
+</script>
 </body>
 </html>
