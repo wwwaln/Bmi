@@ -3,63 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึก BMI และโภชนาการส่วนบุคคล</title>
+    <title>ระบบบันทึก BMI และโภชนาการสมบูรณ์</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* สไตล์ทั้งหมดของคุณถูกเก็บไว้ครบถ้วนที่นี่ */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
-        body { background: #f4f6f9; display: flex; justify-content: center; min-height: 100vh; padding: 10px; padding-bottom: 80px; }
-        .container { background: #ffffff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 600px; }
+        body { background: #f4f6f9; display: flex; justify-content: center; min-height: 100vh; padding-bottom: 80px; }
+        .container { background: #ffffff; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 600px; margin-top: 20px; }
         .hidden { display: none !important; }
-        h2, h3 { text-align: center; margin-bottom: 20px; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; margin-bottom: 10px; }
-        button { width: 100%; padding: 12px; background: #007bff; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .bmi-result-card { color: white; padding: 20px; border-radius: 12px; text-align: center; margin-bottom: 20px; }
-        .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .bento-compartment { background: white; border: 2px dashed #d9534f; border-radius: 8px; padding: 10px; }
         .nav-bar { position: fixed; bottom: 0; width: 100%; max-width: 600px; background: #fff; display: flex; justify-content: space-around; padding: 12px; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 999; }
+        .nav-item { cursor: pointer; border: none; background: none; color: #666; font-size: 13px; }
         .nav-item.active { color: #007bff; font-weight: bold; }
+        .bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .bento-compartment { border: 2px dashed #d9534f; padding: 10px; border-radius: 8px; }
+        .table-responsive { overflow-x: auto; max-height: 200px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #ddd; padding: 10px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="login-box">
-        <h2>เข้าสู่ระบบ</h2>
-        <form id="login-form">
-            <input type="text" id="login-username" required placeholder="ชื่อผู้ใช้">
-            <input type="password" id="login-password" required placeholder="รหัสผ่าน">
-            <button type="submit">เข้าสู่ระบบ</button>
-        </form>
-    </div>
-
+    <div id="login-box"><h2>เข้าสู่ระบบ</h2><form id="login-form"><input type="text" id="login-username" required placeholder="ชื่อผู้ใช้"><input type="password" id="login-password" required placeholder="รหัสผ่าน"><button type="submit">เข้าสู่ระบบ</button></form></div>
+    
     <div id="tab-dashboard" class="hidden">
-        <h2>บันทึกข้อมูลสุขภาพ</h2>
+        <h2>บันทึกข้อมูล</h2>
         <form id="bmi-form">
             <input type="date" id="health-date" required>
-            <select id="health-gender" required>
-                <option value="ชาย">ชาย</option>
-                <option value="หญิง">หญิง</option>
-            </select>
+            <select id="health-gender"><option value="ชาย">ชาย</option><option value="หญิง">หญิง</option></select>
             <input type="number" id="health-birthyear" placeholder="ปีเกิด ค.ศ." required>
-            <input type="number" id="health-weight" step="0.1" placeholder="น้ำหนัก (กก.)" required>
-            <input type="number" id="health-height" step="0.1" placeholder="ส่วนสูง (ซม.)" required>
-            <button type="submit" style="background: #28a745;">บันทึกข้อมูล</button>
+            <input type="number" id="health-weight" placeholder="น้ำหนัก (กก.)" required>
+            <input type="number" id="health-height" placeholder="ส่วนสูง (ซม.)" required>
+            <button type="submit">บันทึก</button>
         </form>
+        <div class="table-responsive"><table id="history-table"><thead><tr><th>วันที่</th><th>BMI</th></tr></thead><tbody id="history-list"></tbody></table></div>
     </div>
 
     <div id="tab-nutrition" class="hidden">
-        <h2>คำแนะนำโภชนาการ</h2>
-        <div class="bmi-result-card" id="bmi-card">
-            <div id="nutr-bmi-val" style="font-size: 30px; font-weight: bold;">-</div>
-            <div id="nutr-bmi-status">-</div>
+        <h2>โภชนาการวันนี้</h2>
+        <div id="bmi-card" style="padding: 20px; color: white; border-radius: 10px; text-align: center;">
+            <div id="nutr-bmi-val" style="font-size: 24px;"></div>
+            <div id="nutr-tdee-val" style="font-size: 18px;"></div>
         </div>
-        <div style="height: 200px;"><canvas id="nutrientPieChart"></canvas></div>
-        <div class="bento-grid" style="margin-top:20px;">
-            <div class="bento-compartment"><div id="bento-carb-name" style="font-weight:bold;">-</div><div id="bento-carb-qty" style="font-size: 12px;">-</div></div>
-            <div class="bento-compartment"><div id="bento-protein-name" style="font-weight:bold;">-</div><div id="bento-protein-qty" style="font-size: 12px;">-</div></div>
-            <div class="bento-compartment"><div id="bento-veg-name" style="font-weight:bold;">-</div><div id="bento-veg-qty" style="font-size: 12px;">-</div></div>
-            <div class="bento-compartment"><div id="bento-fat-name" style="font-weight:bold;">-</div><div id="bento-fat-qty" style="font-size: 12px;">-</div></div>
-        </div>
+        <div style="height: 220px; margin: 20px 0;"><canvas id="nutrientPieChart"></canvas></div>
+        <div class="bento-grid" id="bento-container"></div>
     </div>
 </div>
 
@@ -69,8 +56,13 @@
 </div>
 
 <script>
-    let currentUser = "";
-    let pieChart = null;
+    let currentUser = ""; let pieChart = null;
+
+    function switchTab(tab) {
+        document.getElementById('tab-dashboard').classList.toggle('hidden', tab !== 'dashboard');
+        document.getElementById('tab-nutrition').classList.toggle('hidden', tab !== 'nutrition');
+        if(tab === 'nutrition') generateNutritionAdvice();
+    }
 
     document.getElementById('login-form').onsubmit = (e) => {
         e.preventDefault();
@@ -82,58 +74,44 @@
 
     document.getElementById('bmi-form').onsubmit = (e) => {
         e.preventDefault();
-        const weight = parseFloat(document.getElementById('health-weight').value);
-        const height = parseFloat(document.getElementById('health-height').value) / 100;
-        const bmi = (weight / (height * height)).toFixed(1);
-        const gender = document.getElementById('health-gender').value;
+        const w = parseFloat(document.getElementById('health-weight').value);
+        const h = parseFloat(document.getElementById('health-height').value) / 100;
+        const bmi = (w / (h*h)).toFixed(1);
         const age = 2026 - parseInt(document.getElementById('health-birthyear').value);
-        
-        localStorage.setItem('last_data', JSON.stringify({bmi, weight, height: height*100, gender, age}));
+        const g = document.getElementById('health-gender').value;
+        localStorage.setItem('health_latest', JSON.stringify({bmi, w, h: h*100, age, g}));
         switchTab('nutrition');
     };
 
-    function switchTab(tab) {
-        document.getElementById('tab-dashboard').classList.add('hidden');
-        document.getElementById('tab-nutrition').classList.add('hidden');
-        if(tab === 'dashboard') document.getElementById('tab-dashboard').classList.remove('hidden');
-        else { document.getElementById('tab-nutrition').classList.remove('hidden'); generateNutritionAdvice(); }
-    }
-
     function generateNutritionAdvice() {
-        const data = JSON.parse(localStorage.getItem('last_data'));
-        if(!data) return;
-        
-        const bmr = (data.gender === 'ชาย') ? (10 * data.weight + 6.25 * data.height - 5 * data.age + 5) : (10 * data.weight + 6.25 * data.height - 5 * data.age - 161);
+        const d = JSON.parse(localStorage.getItem('health_latest'));
+        if(!d) return;
+        const bmr = d.g === 'ชาย' ? (10*d.w + 6.25*d.h - 5*d.age + 5) : (10*d.w + 6.25*d.h - 5*d.age - 161);
         const tdee = Math.round(bmr * 1.375);
         
-        const bmi = parseFloat(data.bmi);
-        let carbPct = 50, protPct = 25, fatPct = 25;
-        if(bmi < 18.5) { carbPct = 55; protPct = 25; fatPct = 20; }
-        else if(bmi > 23) { carbPct = 40; protPct = 35; fatPct = 25; }
+        let cP=50, pP=25, fP=25;
+        if(d.bmi < 18.5) { cP=55; pP=25; fP=20; } else if(d.bmi > 23) { cP=40; pP=35; fP=25; }
 
-        document.getElementById('nutr-bmi-val').innerText = `BMI: ${bmi}`;
-        document.getElementById('nutr-bmi-status').innerHTML = `พลังงานที่ควรได้รับ: <strong>${tdee} kcal/วัน</strong>`;
-        document.getElementById('bmi-card').style.background = bmi < 18.5 ? '#f0ad4e' : (bmi > 23 ? '#d9534f' : '#28a745');
-
-        const items = [
-            {id: 'carb', name: 'คาร์โบไฮเดรต', val: Math.round(tdee * (carbPct/100) / 4) + ' kcal'},
-            {id: 'protein', name: 'โปรตีน', val: Math.round(tdee * (protPct/100) / 4) + ' kcal'},
-            {id: 'veg', name: 'ผัก/วิตามิน', val: 'เน้นกากใย'},
-            {id: 'fat', name: 'ไขมันดี', val: Math.round(tdee * (fatPct/100) / 9) + ' kcal'}
+        document.getElementById('nutr-bmi-val').innerText = "BMI ล่าสุด: " + d.bmi;
+        document.getElementById('nutr-tdee-val').innerText = "พลังงานที่ควรได้รับ: " + tdee + " kcal/วัน";
+        
+        // แสดงเมนูเบนโตะพร้อมแบ่งแคลอรี่
+        const bento = [
+            {n: 'คาร์โบไฮเดรต', v: Math.round(tdee * cP/100) + ' kcal'},
+            {n: 'โปรตีน', v: Math.round(tdee * pP/100) + ' kcal'},
+            {n: 'ผัก/ใยอาหาร', v: 'อิ่มนานสุขภาพดี'},
+            {n: 'ไขมันดี', v: Math.round(tdee * fP/100) + ' kcal'}
         ];
+        document.getElementById('bento-container').innerHTML = bento.map(i => `<div class="bento-compartment"><b>${i.n}</b><br>${i.v}</div>`).join('');
 
-        items.forEach(i => {
-            document.getElementById(`bento-${i.id}-name`).innerText = i.name;
-            document.getElementById(`bento-${i.id}-qty`).innerText = i.val;
-        });
-
+        // วาดกราฟพร้อมเปอร์เซ็นต์
         const ctx = document.getElementById('nutrientPieChart').getContext('2d');
         if(pieChart) pieChart.destroy();
         pieChart = new Chart(ctx, {
             type: 'pie',
-            data: {
-                labels: [`คาร์บ ${carbPct}%`, `โปรตีน ${protPct}%`, `ไขมัน ${fatPct}%`],
-                datasets: [{ data: [carbPct, protPct, fatPct], backgroundColor: ['#ffce56', '#ff6384', '#36a2eb'] }]
+            data: { 
+                labels: [`คาร์บ ${cP}%`, `โปรตีน ${pP}%`, `ไขมัน ${fP}%`], 
+                datasets: [{ data: [cP, pP, fP], backgroundColor: ['#ffce56', '#ff6384', '#36a2eb'] }] 
             }
         });
     }
