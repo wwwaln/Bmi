@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกและคำนวณ BMI รายวัน</title>
+    <title>ระบบบันทึก BMI และโปรไฟล์ผู้ใช้งาน</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -18,16 +19,18 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+            padding-bottom: 80px; /* เผื่อพื้นที่สำหรับเมนูด้านล่าง */
         }
 
         .container {
             background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
+            padding: 25px;
+            border-radius: 15px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 600px;
+            margin-bottom: 20px;
         }
 
         h2, h3 {
@@ -76,6 +79,7 @@
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
+            font-weight: bold;
         }
 
         button:hover {
@@ -95,10 +99,20 @@
             font-weight: bold;
         }
 
-        /* ตารางแสดงประวัติ */
+        /* --- สไตล์ส่วนแสดงกราฟและตาราง --- */
+        .chart-container {
+            position: relative;
+            margin: 20px 0;
+            width: 100%;
+            height: 250px;
+        }
+
         .table-responsive {
             overflow-x: auto;
             margin-top: 20px;
+            max-height: 180px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
 
         table {
@@ -107,7 +121,7 @@
         }
 
         th, td {
-            border: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
             padding: 10px;
             text-align: center;
             font-size: 13px;
@@ -116,20 +130,8 @@
 
         th {
             background-color: #f8f9fa;
-            color: #333;
-        }
-
-        .user-info {
-            background: #e9ecef;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .hidden {
-            display: none;
+            position: sticky;
+            top: 0;
         }
 
         .badge {
@@ -138,6 +140,97 @@
             padding: 3px 8px;
             border-radius: 3px;
             font-weight: bold;
+        }
+
+        /* --- สไตล์ระบบเมนูด้านล่าง (Bottom Navigation) --- */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 600px;
+            background: #ffffff;
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            z-index: 999;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 5px;
+            margin: 0;
+        }
+
+        .nav-item.active {
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        /* --- สไตล์หน้าโปรไฟล์และการตั้งค่า --- */
+        .profile-card {
+            text-align: center;
+            padding: 20px 10px;
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px auto;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #007bff;
+            background: #eee;
+        }
+
+        .upload-btn-wrapper {
+            margin-top: 8px;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .profile-info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            margin-top: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .profile-info-item {
+            margin-bottom: 10px;
+            font-size: 15px;
+            color: #444;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+
+        .profile-info-item strong {
+            color: #111;
+        }
+
+        .hidden {
+            display: none !important;
         }
     </style>
 </head>
@@ -180,10 +273,8 @@
             </div>
         </div>
 
-        <div id="main-dashboard" class="hidden">
+        <div id="tab-dashboard" class="hidden">
             <h2>บันทึกข้อมูลสุขภาพรายวัน</h2>
-            <div class="user-info" id="welcome-msg">สวัสดีคุณ </div>
-            
             <form id="bmi-form">
                 <div class="form-row">
                     <div class="form-group">
@@ -207,21 +298,24 @@
                         <input type="number" id="health-birthyear" min="1900" max="2026" required placeholder="ค.ศ. เกิด">
                     </div>
                     <div class="form-group">
-                        <label>น้ำหนัก (กิโลกรัม)</label>
+                        <label>น้ำหนัก (กก.)</label>
                         <input type="number" id="health-weight" step="0.1" min="1" required placeholder="เช่น 65.5">
                     </div>
                     <div class="form-group">
-                        <label>ส่วนสูง (เซนติเมตร)</label>
+                        <label>ส่วนสูง (ซม.)</label>
                         <input type="number" id="health-height" step="0.1" min="1" required placeholder="เช่น 170">
                     </div>
                 </div>
-
-                <button type="submit" style="background: #28a745;">คำนวณและบันทึกค่าวัดอัตโนมัติ</button>
+                <button type="submit" style="background: #28a745;">คำนวณและบันทึกอัตโนมัติ</button>
             </form>
 
-            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+            <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ccc;">
+            <h3>กราฟแนวโน้มค่า BMI ของคุณ</h3>
+            <div class="chart-container">
+                <canvas id="bmiChart"></canvas>
+            </div>
 
-            <h3>ประวัติการประเมิน BMI ของคุณ</h3>
+            <h3>ประวัติการประเมิน</h3>
             <div class="table-responsive">
                 <table id="history-table">
                     <thead>
@@ -229,33 +323,95 @@
                             <th>วันที่</th>
                             <th>เพศ</th>
                             <th>อายุ</th>
-                            <th>น้ำหนัก (กก.)</th>
-                            <th>ส่วนสูง (ซม.)</th>
-                            <th>ค่า BMI</th>
+                            <th>น้ำหนัก</th>
+                            <th>ส่วนสูง</th>
+                            <th>BMI</th>
                         </tr>
                     </thead>
-                    <tbody id="history-list">
-                        </tbody>
+                    <tbody id="history-list"></tbody>
                 </table>
             </div>
-            
-            <button id="logout-btn" style="background: #dc3545; margin-top: 20px;">ออกจากระบบ</button>
         </div>
+
+        <div id="tab-settings" class="hidden">
+            <h2>การตั้งค่าและโปรไฟล์</h2>
+            <div class="profile-card">
+                <div class="avatar-container">
+                    <img id="avatar-img" class="profile-avatar" src="https://via.placeholder.com/120" alt="โปรไฟล์">
+                </div>
+                <div class="upload-btn-wrapper">
+                    <input type="file" id="avatar-input" accept="image/*">
+                </div>
+
+                <div class="profile-info-box">
+                    <div class="profile-info-item">ชื่อผู้ใช้: <strong id="prof-username">-</strong></div>
+                    <div class="profile-info-item">เพศล่าสุดที่ระบุ: <strong id="prof-gender">-</strong></div>
+                    <div class="profile-info-item">อายุปัจจุบัน: <strong id="prof-age">-</strong></div>
+                    <div class="profile-info-item">น้ำหนักล่าสุด: <strong id="prof-weight">-</strong> กิโลกรัม</div>
+                    <div class="profile-info-item">ส่วนสูงล่าสุด: <strong id="prof-height">-</strong> เซนติเมตร</div>
+                    <div class="profile-info-item">ค่า BMI ล่าสุด: <strong id="prof-bmi">-</strong></div>
+                </div>
+
+                <button id="logout-btn" style="background: #dc3545; margin-top: 30px;">ออกจากระบบ (Log out)</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-nav" class="nav-bar hidden">
+        <button class="nav-item active" id="nav-dash-btn">🏠 หน้าหลัก / บันทึก</button>
+        <button class="nav-item" id="nav-set-btn">⚙️ ตั้งค่า / โปรไฟล์</button>
     </div>
 
     <script>
         const loginBox = document.getElementById('login-box');
         const registerBox = document.getElementById('register-box');
-        const mainDashboard = document.getElementById('main-dashboard');
+        const tabDashboard = document.getElementById('tab-dashboard');
+        const tabSettings = document.getElementById('tab-settings');
+        const appNav = document.getElementById('app-nav');
         
         let currentUser = ""; 
+        let bmiChart = null; 
 
-        // ตั้งวันที่ปัจจุบันเป็นค่าเริ่มต้น
         document.getElementById('health-date').valueAsDate = new Date();
 
-        // สลับหน้าจอ
+        // สลับหน้า Login / Register
         document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); loginBox.classList.add('hidden'); registerBox.classList.remove('hidden'); });
         document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); registerBox.classList.add('hidden'); loginBox.classList.remove('hidden'); });
+
+        // ระบบเปลี่ยนรูปโปรไฟล์จากในโทรศัพท์/เครื่องคอมพิวเตอร์
+        document.getElementById('avatar-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const base64Image = event.target.result;
+                    document.getElementById('avatar-img').src = base64Image;
+                    // เซฟรูปภาพลงในเครื่องแยกตามชื่อผู้ใช้
+                    localStorage.setItem('avatar_' + currentUser, base64Image);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // ระบบจัดการสลับแท็บเมนูด้านล่าง (หน้าหลัก <-> ตั้งค่า)
+        const navDashBtn = document.getElementById('nav-dash-btn');
+        const navSetBtn = document.getElementById('nav-set-btn');
+
+        navDashBtn.addEventListener('click', () => {
+            navDashBtn.classList.add('active');
+            navSetBtn.classList.remove('active');
+            tabDashboard.classList.remove('hidden');
+            tabSettings.classList.add('hidden');
+            displayHistoryAndChart(); // อัปเดตกราฟเผื่อมีการเปลี่ยนแปลง
+        });
+
+        navSetBtn.addEventListener('click', () => {
+            navSetBtn.classList.add('active');
+            navDashBtn.classList.remove('active');
+            tabDashboard.classList.add('hidden');
+            tabSettings.classList.remove('hidden');
+            updateProfilePage(); // อัปเดตข้อมูลผู้ใช้ในหน้าโปรไฟล์
+        });
 
         // สมัครสมาชิก
         document.getElementById('register-form').addEventListener('submit', (e) => {
@@ -278,18 +434,22 @@
 
             if (savedPassword && savedPassword === password) {
                 currentUser = username;
-                document.getElementById('welcome-msg').innerText = `สวัสดีคุณ: ${currentUser}`;
                 
                 loginBox.classList.add('hidden');
-                mainDashboard.classList.remove('hidden');
+                tabDashboard.classList.remove('hidden');
+                appNav.classList.remove('hidden'); // แสดงเมนูด้านล่าง
                 
-                displayHistory(); // แสดงประวัติเก่าของคนที่ล็อกอิน
+                // โหลดรูปโปรไฟล์ที่เคยเซฟไว้ (ถ้ามี)
+                const savedAvatar = localStorage.getItem('avatar_' + currentUser);
+                document.getElementById('avatar-img').src = savedAvatar ? savedAvatar : "https://via.placeholder.com/120";
+
+                displayHistoryAndChart(); 
             } else {
                 alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
         });
 
-        // ระบบคำนวณและบันทึกข้อมูลอัตโนมัติ
+        // ระบบบันทึกข้อมูลและคำนวณอัตโนมัติ
         document.getElementById('bmi-form').addEventListener('submit', (e) => {
             e.preventDefault();
             
@@ -299,44 +459,68 @@
             const weight = parseFloat(document.getElementById('health-weight').value);
             const height = parseFloat(document.getElementById('health-height').value);
 
-            // 1. คำนวณอายุอัตโนมัติ (อิงปีปัจจุบัน ค.ศ. 2026)
             const currentYear = new Date().getFullYear();
             const age = currentYear - birthYear;
 
-            // 2. คำนวณ BMI อัตโนมัติ (น้ำหนัก / ส่วนสูงเมตรยกกำลังสอง)
             const heightInMeters = height / 100;
             const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
-            // 3. บันทึกลง LocalStorage
             let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
-            history.push({ date, gender, age, weight, height, bmi });
+            history.push({ date, gender, age, weight, height, bmi, birthYear });
             
-            // เรียงวันที่ล่าสุดอยู่ล่าง หรือเรียงจากเก่าไปใหม่
             history.sort((a, b) => new Date(a.date) - new Date(b.date));
             localStorage.setItem('health_history_' + currentUser, JSON.stringify(history));
 
-            alert(`คำนวณเสร็จสิ้น! ค่า BMI ของคุณคือ ${bmi} ระบบบันทึกข้อมูลให้เรียบร้อยแล้ว`);
+            alert(`บันทึกสำเร็จ! ค่า BMI ของคุณคือ ${bmi}`);
             
-            // ล้างฟอร์มน้ำหนักส่วนสูง (เก็บเพศกับปีเกิดไว้เผื่อกรอกวันถัดไปจะได้ไม่ต้องพิมพ์ใหม่หมด)
             document.getElementById('health-weight').value = "";
             document.getElementById('health-height').value = "";
             
-            displayHistory(); // รีเฟรชตาราง
+            displayHistoryAndChart(); 
         });
 
-        // ดึงประวัติมาแสดง
-        function displayHistory() {
+        // ฟังก์ชันอัปเดตข้อมูลภาพรวมในหน้าโปรไฟล์
+        function updateProfilePage() {
+            document.getElementById('prof-username').innerText = currentUser;
+            let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
+
+            if (history.length > 0) {
+                // ดึงข้อมูลล่าสุดตัวท้ายสุดของอาร์เรย์มาแสดงผล
+                let latest = history[history.length - 1];
+                document.getElementById('prof-gender').innerText = latest.gender;
+                document.getElementById('prof-age').innerText = latest.age + " ปี";
+                document.getElementById('prof-weight').innerText = latest.weight;
+                document.getElementById('prof-height').innerText = latest.height;
+                document.getElementById('prof-bmi').innerText = latest.bmi;
+            } else {
+                // ถ้ายังไม่เคยกรอกข้อมูลอะไรเลย
+                document.getElementById('prof-gender').innerText = "ยังไม่มีข้อมูล";
+                document.getElementById('prof-age').innerText = "ยังไม่มีข้อมูล";
+                document.getElementById('prof-weight').innerText = "-";
+                document.getElementById('prof-height').innerText = "-";
+                document.getElementById('prof-bmi').innerText = "-";
+            }
+        }
+
+        // แสดงประวัติและกราฟ
+        function displayHistoryAndChart() {
             const historyList = document.getElementById('history-list');
             historyList.innerHTML = ""; 
 
             let history = JSON.parse(localStorage.getItem('health_history_' + currentUser)) || [];
+            let chartLabels = [];
+            let chartData = [];
 
             if (history.length === 0) {
-                historyList.innerHTML = `<tr><td colspan="6" style="color:#888;">ยังไม่มีประวัติการบันทึกข้อมูลสุขภาพ</td></tr>`;
+                historyList.innerHTML = `<tr><td colspan="6" style="color:#888;">ยังไม่มีประวัติข้อมูลสุขภาพ</td></tr>`;
+                updateChart(chartLabels, chartData);
                 return;
             }
 
             history.forEach(item => {
+                chartLabels.push(item.date);
+                chartData.push(item.bmi);
+
                 const row = `<tr>
                     <td>${item.date}</td>
                     <td>${item.gender}</td>
@@ -347,16 +531,52 @@
                 </tr>`;
                 historyList.innerHTML += row;
             });
+
+            updateChart(chartLabels, chartData);
         }
 
-        // ออกจากระบบ
+        // วาดกราฟ
+        function updateChart(labels, data) {
+            const ctx = document.getElementById('bmiChart').getContext('2d');
+            if (bmiChart) { bmiChart.destroy(); }
+            bmiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'ค่า BMI รายวัน',
+                        data: data,
+                        borderColor: '#007bff',
+                        backgroundColor: 'rgba(0, 123, 255, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.2,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // ปุ่มออกจากระบบ (ย้ายมาอยู่ด้านในหน้าตั้งค่าแล้ว)
         document.getElementById('logout-btn').addEventListener('click', () => {
             currentUser = "";
+            if (bmiChart) { bmiChart.destroy(); bmiChart = null; }
             document.getElementById('login-form').reset();
             document.getElementById('bmi-form').reset();
-            document.getElementById('health-date').valueAsDate = new Date();
-            mainDashboard.classList.add('hidden');
+            document.getElementById('avatar-input').value = "";
+            
+            // รีเซ็ตหน้ากลับไปเริ่มต้น
+            tabDashboard.classList.add('hidden');
+            tabSettings.classList.add('hidden');
+            appNav.classList.add('hidden');
             loginBox.classList.remove('hidden');
+            
+            // คืนค่าปุ่มเมนูด้านล่างให้กลับมาปุ่มแรก
+            navDashBtn.classList.add('active');
+            navSetBtn.classList.remove('active');
         });
     </script>
 </body>
