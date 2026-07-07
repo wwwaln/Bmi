@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบเข้าสู่ระบบ / สมัครสมาชิก</title>
+    <title>ระบบบันทึกข้อมูล BMI รายวัน</title>
     <style>
         * {
             box-sizing: border-box;
@@ -17,7 +17,8 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            padding: 20px;
         }
 
         .container {
@@ -26,10 +27,10 @@
             border-radius: 10px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
         }
 
-        h2 {
+        h2, h3 {
             text-align: center;
             margin-bottom: 20px;
             color: #333;
@@ -54,11 +55,6 @@
             font-size: 16px;
         }
 
-        input:focus {
-            border-color: #007bff;
-            outline: none;
-        }
-
         button {
             width: 100%;
             padding: 12px;
@@ -69,7 +65,6 @@
             border-radius: 5px;
             cursor: pointer;
             margin-top: 10px;
-            transition: background 0.2s;
         }
 
         button:hover {
@@ -89,11 +84,34 @@
             font-weight: bold;
         }
 
-        .switch-text a:hover {
-            text-decoration: underline;
+        /* ตารางแสดงประวัติ */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
         }
 
-        /* ซ่อนหน้าจอเริ่มต้น */
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        .user-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
         .hidden {
             display: none;
         }
@@ -106,11 +124,11 @@
             <h2>เข้าสู่ระบบ</h2>
             <form id="login-form">
                 <div class="form-group">
-                    <label for="login-username">ชื่อผู้ใช้</label>
+                    <label>ชื่อผู้ใช้</label>
                     <input type="text" id="login-username" required placeholder="กรอกชื่อผู้ใช้">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">รหัสผ่าน</label>
+                    <label>รหัสผ่าน</label>
                     <input type="password" id="login-password" required placeholder="กรอกรหัสผ่าน">
                 </div>
                 <button type="submit">เข้าสู่ระบบ</button>
@@ -124,11 +142,11 @@
             <h2>สร้างบัญชีผู้ใช้ใหม่</h2>
             <form id="register-form">
                 <div class="form-group">
-                    <label for="reg-username">ชื่อผู้ใช้</label>
+                    <label>ชื่อผู้ใช้</label>
                     <input type="text" id="reg-username" required placeholder="ตั้งชื่อผู้ใช้">
                 </div>
                 <div class="form-group">
-                    <label for="reg-password">รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
+                    <label>รหัสผ่าน (อย่างน้อย 8 ตัวอักษร)</label>
                     <input type="password" id="reg-password" minlength="8" required placeholder="ตั้งรหัสผ่าน">
                 </div>
                 <button type="submit">สมัครสมาชิก</button>
@@ -137,61 +155,143 @@
                 มีบัญชีอยู่แล้ว? <a href="#" id="to-login">เข้าสู่ระบบที่นี่</a>
             </div>
         </div>
+
+        <div id="main-dashboard" class="hidden">
+            <h2>บันทึกสุขภาพรายวัน</h2>
+            <div class="user-info" id="welcome-msg">สวัสดีคุณ </div>
+            
+            <form id="bmi-form">
+                <div class="form-group">
+                    <label>วันที่บันทึก</label>
+                    <input type="date" id="bmi-date" required>
+                </div>
+                <div class="form-group">
+                    <label>ค่า BMI ที่วัดได้ (เช่น 22.5)</label>
+                    <input type="number" id="bmi-value" step="0.1" required placeholder="กรอกค่า BMI ของคุณ">
+                </div>
+                <button type="submit" style="background: #28a745;">บันทึกข้อมูล</button>
+            </form>
+
+            <hr style="margin: 25px 0; border: 0; border-top: 1px solid #ccc;">
+
+            <h3>ประวัติการบันทึกของคุณ</h3>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>วันที่</th>
+                        <th>ค่า BMI</th>
+                    </tr>
+                </thead>
+                <tbody id="history-list">
+                    </tbody>
+            </table>
+            
+            <button id="logout-btn" style="background: #dc3545; margin-top: 20px;">ออกจากระบบ</button>
+        </div>
     </div>
 
     <script>
-        // ดึง Element ต่างๆ มาใช้งาน
         const loginBox = document.getElementById('login-box');
         const registerBox = document.getElementById('register-box');
+        const mainDashboard = document.getElementById('main-dashboard');
         
-        const toRegisterLink = document.getElementById('to-register');
-        const toLoginLink = document.getElementById('to-login');
+        let currentUser = ""; // เก็บชื่อผู้ใช้ที่กำลังล็อกอินอยู่ปัจจุบัน
 
-        // สลับไปหน้าสมัครสมาชิก
-        toRegisterLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            loginBox.classList.add('hidden');
-            registerBox.classList.remove('hidden');
-        });
+        // ตั้งค่าวันที่เริ่มต้นของช่องบันทึกข้อมูลให้เป็น "วันนี้" อัตโนมัติ
+        document.getElementById('bmi-date').valueAsDate = new Date();
 
-        // สลับกลับมาหน้าเข้าสู่ระบบ
-        toLoginLink.addEventListener('click', (e) => {
-            e.preventDefault();
-            registerBox.classList.add('hidden');
-            loginBox.classList.remove('hidden');
-        });
+        // สลับหน้าจอไปมา
+        document.getElementById('to-register').addEventListener('click', (e) => { e.preventDefault(); loginBox.classList.add('hidden'); registerBox.classList.remove('hidden'); });
+        document.getElementById('to-login').addEventListener('click', (e) => { e.preventDefault(); registerBox.classList.add('hidden'); loginBox.classList.remove('hidden'); });
 
-        // จำลองระบบบันทึกข้อมูล (ใช้ LocalStorage ของเบราว์เซอร์)
+        // ระบบสมัครสมาชิก
         document.getElementById('register-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('reg-username').value;
             const password = document.getElementById('reg-password').value;
 
-            // บันทึกข้อมูลลงเบราว์เซอร์
             localStorage.setItem('user_' + username, password);
-            
-            alert('สร้างบัญชีผู้ใช้สำเร็จแล้ว! ระบบจะพากลับไปหน้าเข้าสู่ระบบ');
-            
-            // รีเซ็ตฟอร์มแล้วสลับหน้ากลับไปล็อกอิน
+            alert('สร้างบัญชีผู้ใช้สำเร็จแล้ว!');
             document.getElementById('register-form').reset();
             registerBox.classList.add('hidden');
             loginBox.classList.remove('hidden');
         });
 
-        // ระบบตรวจสอบตอนเข้าสู่ระบบ
+        // ระบบเข้าสู่ระบบ
         document.getElementById('login-form').addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('login-username').value;
             const password = document.getElementById('login-password').value;
-
-            // ดึงรหัสผ่านที่เคยบันทึกไว้มาเช็ค
             const savedPassword = localStorage.getItem('user_' + username);
 
             if (savedPassword && savedPassword === password) {
-                alert('ยินดีต้อนรับเข้าสู่ระบบสำเร็จ!');
+                currentUser = username;
+                document.getElementById('welcome-msg').innerText = `สวัสดีคุณ: ${currentUser}`;
+                
+                // ซ่อนหน้าล็อกอิน ย้ายไปหน้าแดชบอร์ด บันทึก BMI
+                loginBox.classList.add('hidden');
+                mainDashboard.classList.remove('hidden');
+                
+                // ดึงประวัติที่เคยบันทึกไว้ขึ้นมาโชว์
+                displayHistory();
             } else {
-                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง หรือยังไม่ได้สมัครสมาชิก');
+                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
+        });
+
+        // ระบบบันทึกค่า BMI รายวัน
+        document.getElementById('bmi-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const dateInput = document.getElementById('bmi-date').value;
+            const bmiInput = document.getElementById('bmi-value').value;
+
+            // ดึงข้อมูลประวัติเก่าในคลัง (ถ้ามี)
+            let history = JSON.parse(localStorage.getItem('bmi_history_' + currentUser)) || [];
+            
+            // เพิ่มข้อมูลใหม่เข้าไปในรายการ
+            history.push({ date: dateInput, bmi: bmiInput });
+            
+            // เรียงลำดับตามวันที่จากเก่าไปใหม่
+            history.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            // เซฟกลับลงไปในเบราว์เซอร์
+            localStorage.setItem('bmi_history_' + currentUser, JSON.stringify(history));
+
+            alert('บันทึกค่า BMI เรียบร้อยแล้ว!');
+            document.getElementById('bmi-value').value = ""; // เคลียร์ช่องกรอกเลข BMI
+            
+            // อัปเดตตารางประวัติแบบเรียลไทม์
+            displayHistory();
+        });
+
+        // ฟังก์ชันดึงประวัติมาแสดงบนตาราง
+        function displayHistory() {
+            const historyList = document.getElementById('history-list');
+            historyList.innerHTML = ""; // เคลียร์ตารางเดิมก่อน
+
+            let history = JSON.parse(localStorage.getItem('bmi_history_' + currentUser)) || [];
+
+            if (history.length === 0) {
+                historyList.innerHTML = `<tr><td colspan="2" style="color:#888;">ยังไม่มีประวัติการบันทึก</td></tr>`;
+                return;
+            }
+
+            // นำประวัติแต่ละวันมาสร้างเป็นแถวในตาราง
+            history.forEach(item => {
+                const row = `<tr>
+                    <td>${item.date}</td>
+                    <td><strong>${item.bmi}</strong></td>
+                </tr>`;
+                historyList.innerHTML += row;
+            });
+        }
+
+        // ปุ่มออกจากระบบ
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            currentUser = "";
+            document.getElementById('login-form').reset();
+            mainDashboard.classList.add('hidden');
+            loginBox.classList.remove('hidden');
         });
     </script>
 </body>
