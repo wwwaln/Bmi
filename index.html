@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบเข้าสู่ระบบและสมัครสมาชิก</title>
+    <title>ระบบข้อมูลสุขภาพและ BMI</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -13,11 +14,13 @@
         }
 
         body {
-            background: #f0f2f5;
+            background: #f4f6f9;
+            color: #333;
+            padding: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         .container {
@@ -26,13 +29,19 @@
             border-radius: 12px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
+            transition: max-width 0.5s ease;
         }
 
-        h2 {
+        /* ปรับขนาดหน้าจอให้กว้างขึ้นเมื่อเข้าสู่หน้า Dashboard */
+        .container.dashboard-mode {
+            max-width: 800px;
+        }
+
+        h2, h3 {
             text-align: center;
-            margin-bottom: 24px;
-            color: #333;
+            margin-bottom: 20px;
+            color: #2c3e50;
         }
 
         .form-group {
@@ -42,28 +51,37 @@
         .form-group label {
             display: block;
             margin-bottom: 6px;
-            color: #666;
+            color: #555;
             font-size: 14px;
+            font-weight: 600;
         }
 
-        .form-group input {
+        .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 15px;
             outline: none;
-            transition: 0.3s;
         }
 
-        .form-group input:focus {
-            border-color: #007bff;
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: #3498db;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .row .form-group {
+            flex: 1;
         }
 
         button {
             width: 100%;
             padding: 12px;
-            background: #007bff;
+            background: #3498db;
             border: none;
             color: white;
             font-size: 16px;
@@ -74,7 +92,7 @@
         }
 
         button:hover {
-            background: #0056b3;
+            background: #2980b9;
         }
 
         .toggle-text {
@@ -85,41 +103,72 @@
         }
 
         .toggle-text a {
-            color: #007bff;
+            color: #3498db;
             text-decoration: none;
             font-weight: bold;
         }
 
-        .toggle-text a:hover {
-            text-decoration: underline;
-        }
-
-        /* ซ่อนฟอร์มที่ไม่ได้เลือก */
         .hidden {
-            display: none;
+            display: none !important;
         }
 
         .error-msg {
-            color: red;
-            font-size: 12px;
+            color: #e74c3c;
+            font-size: 13px;
             margin-top: 4px;
             display: none;
+        }
+
+        /* สไตล์ของหน้า Dashboard */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .bmi-display {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-left: 5px solid #3498db;
+        }
+
+        .bmi-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #2980b9;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #eee;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- 1. ฟอร์มเข้าสู่ระบบ (Login) -->
+<div class="container" id="main-container">
+    
     <div id="login-form">
         <h2>เข้าสู่ระบบ</h2>
         <form onsubmit="handleLogin(event)">
             <div class="form-group">
-                <label for="login-username">ชื่อผู้ใช้งาน</label>
+                <label>ชื่อผู้ใช้งาน</label>
                 <input type="text" id="login-username" required placeholder="ใส่ชื่อผู้ใช้งาน">
             </div>
             <div class="form-group">
-                <label for="login-password">รหัสผ่าน</label>
+                <label>รหัสผ่าน</label>
                 <input type="password" id="login-password" required placeholder="ใส่รหัสผ่าน">
             </div>
             <button type="submit">เข้าสู่ระบบ</button>
@@ -129,33 +178,99 @@
         </div>
     </div>
 
-    <!-- 2. ฟอร์มสร้างบัญชีใหม่ (Sign Up) -->
     <div id="signup-form" class="hidden">
         <h2>สร้างแอคเคานต์</h2>
         <form onsubmit="handleSignUp(event)">
             <div class="form-group">
-                <label for="signup-username">ตั้งชื่อผู้ใช้งาน</label>
-                <input type="text" id="signup-username" required placeholder="อย่างน้อย 3 ตัวอักษร">
+                <label>ตั้งชื่อผู้ใช้งาน</label>
+                <input type="text" id="signup-username" required placeholder="ใส่ชื่อผู้ใช้งาน">
             </div>
             <div class="form-group">
-                <label for="signup-password">ตั้งรหัสผ่าน</label>
+                <label>ตั้งรหัสผ่าน (8 ตัวขึ้นไป)</label>
                 <input type="password" id="signup-password" required placeholder="ต้องมีอย่างน้อย 8 ตัว">
                 <div id="password-error" class="error-msg">รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร!</div>
             </div>
-            <button type="submit">ยืนยันการสมัครสมาชิก</button>
+            <button type="submit">ยืนยันและเข้าสู่ระบบ</button>
         </form>
         <div class="toggle-text">
             มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleForm('login')">เข้าสู่ระบบที่นี่</a>
         </div>
     </div>
+
+    <div id="dashboard" class="hidden">
+        <h2 id="welcome-msg">สวัสดีคุณ ผู้ใช้งาน</h2>
+        
+        <div class="dashboard-layout">
+            <div>
+                <div class="bmi-display">
+                    <div>ค่า BMI ปัจจุบันของคุณ</div>
+                    <div class="bmi-value" id="current-bmi">--</div>
+                    <div id="bmi-status">ยังไม่มีข้อมูล</div>
+                </div>
+
+                <h3>บันทึกข้อมูลสุขภาพ</h3>
+                <form onsubmit="saveHealthData(event)">
+                    <div class="row">
+                        <div class="form-group">
+                            <label>เพศ</label>
+                            <select id="gender" required>
+                                <option value="ชาย">ชาย</option>
+                                <option value="หญิง">หญิง</option>
+                                <option value="อื่น ๆ">อื่น ๆ</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>ปีเกิด (พ.ศ.)</label>
+                            <input type="number" id="birth-year" min="2440" max="2569" required placeholder="เช่น 2543">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="form-group">
+                            <label>น้ำหนัก (กก.)</label>
+                            <input type="number" id="weight" step="0.1" required placeholder="เช่น 65.5">
+                        </div>
+                        <div class="form-group">
+                            <label>ส่วนสูง (ซม.)</label>
+                            <input type="number" id="height" required placeholder="เช่น 170">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>การแพ้อาหาร</label>
+                        <input type="text" id="allergy" placeholder="ไม่มี (หรือระบุ เช่น กุ้ง, นมวัว)">
+                    </div>
+
+                    <div class="form-group">
+                        <label>โรคประจำตัว</label>
+                        <input type="text" id="disease" placeholder="ไม่มี (หรือระบุ เช่น ความดัน, เบาหวาน)">
+                    </div>
+
+                    <button type="submit" style="background: #2ecc71;">บันทึกข้อมูล</button>
+                </form>
+            </div>
+
+            <div>
+                <h3>กราฟสะสม BMI ในแต่ละครั้ง</h3>
+                <div class="chart-container">
+                    <canvas id="bmiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    // ฟังก์ชันสลับหน้าจอระหว่าง เข้าสู่ระบบ กับ สมัครสมาชิก
+    // ข้อมูลจำลองสำหรับเก็บประวัติ BMI (เพื่อนำไปวาดกราฟ)
+    let bmiHistory = [];
+    let count = 0;
+    let bmiChart;
+
+    // ฟังก์ชันสลับหน้า Login / Signup
     function toggleForm(formType) {
         const loginForm = document.getElementById('login-form');
         const signupForm = document.getElementById('signup-form');
-        
         if (formType === 'signup') {
             loginForm.classList.add('hidden');
             signupForm.classList.remove('hidden');
@@ -165,35 +280,117 @@
         }
     }
 
-    // ฟังก์ชันเมื่อกดปุ่ม "ยืนยันการสมัครสมาชิก"
+    // เมื่อสมัครสมาชิกสำเร็จ -> เด้งไปหน้าแดชบอร์ด
     function handleSignUp(event) {
-        event.preventDefault(); // ป้องกันหน้าเว็บโหลดใหม่
-        
+        event.preventDefault();
         const username = document.getElementById('signup-username').value;
         const password = document.getElementById('signup-password').value;
         const errorMsg = document.getElementById('password-error');
 
-        // ตรวจสอบเงื่อนไขรหัสผ่าน 8 ตัว
         if (password.length < 8) {
             errorMsg.style.display = 'block';
             return;
-        } else {
-            errorMsg.style.display = 'none';
         }
-
-        // ยิงยืนยันผ่าน (จำลองการสมัครสำเร็จ)
-        alert(`🎉 สมัครสมาชิกสำเร็จ!\nยินดีต้อนรับคุณ: ${username}\nระบบได้ทำการบันทึกข้อมูลเรียบร้อยแล้ว`);
+        errorMsg.style.display = 'none';
         
-        // เมื่อสมัครเสร็จ ให้เด้งกลับไปหน้าล็อกอินอัตโนมัติ
-        toggleForm('login');
+        alert("สร้างแอคเคานต์สำเร็จ!");
+        goToDashboard(username);
     }
 
-    // ฟังก์ชันเมื่อกดปุ่ม "เข้าสู่ระบบ"
+    // เมื่อเข้าสู่ระบบสำเร็จ -> เด้งไปหน้าแดชบอร์ด
     function handleLogin(event) {
         event.preventDefault();
         const username = document.getElementById('login-username').value;
+        goToDashboard(username);
+    }
+
+    // ฟังก์ชันเปลี่ยนหน้าจอไปแดชบอร์ด
+    function goToDashboard(username) {
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('signup-form').classList.add('hidden');
+        document.getElementById('dashboard').classList.remove('hidden');
         
-        alert(`🔓 เข้าสู่ระบบสำเร็จ!\nยินดีต้อนรับกลับมาครับ คุณ ${username}`);
+        // ขยายความกว้างกล่องให้เหมาะกับแดชบอร์ด
+        document.getElementById('main-container').classList.add('dashboard-mode');
+        document.getElementById('welcome-msg').innerText = `สวัสดีคุณ, ${username} 👋`;
+        
+        // เรียกใช้งานระบบกราฟครั้งแรก
+        initChart();
+    }
+
+    // ฟังก์ชันบันทึกข้อมูลและคำนวณ BMI
+    function saveHealthData(event) {
+        event.preventDefault();
+        
+        const weight = parseFloat(document.getElementById('weight').value);
+        const heightCm = parseFloat(document.getElementById('height').value);
+        
+        // คำนวณ BMI: น้ำหนัก (กก.) / ส่วนสูง (เมตร) ยกกำลังสอง
+        const heightM = heightCm / 100;
+        const bmi = (weight / (heightM * heightM)).toFixed(1);
+
+        // แสดงผลค่า BMI ปัจจุบันบนหน้าจอ
+        document.getElementById('current-bmi').innerText = bmi;
+        
+        // ประเมินผลสุขภาพเบื้องต้น
+        let status = "";
+        if (bmi < 18.5) status = "น้ำหนักน้อย / ผอมเกินไป 🟡";
+        else if (bmi < 23.0) status = "น้ำหนักปกติ / สุขภาพดี 🟢";
+        else if (bmi < 25.0) status = "ท้วม / เริ่มอ้วน 🟠";
+        else if (bmi < 30.0) status = "อ้วน / อ้วนระดับ 1 🔴";
+        else status = "อ้วนมาก / อ้วนระดับ 2 🚨";
+        
+        document.getElementById('bmi-status').innerText = status;
+
+        // อัปเดตข้อมูลเข้ากราฟสะสม
+        count++;
+        bmiHistory.push({
+            times: `ครั้งที่ ${count}`,
+            value: bmi
+        });
+
+        updateChart();
+        alert("บันทึกข้อมูลสุขภาพสำเร็จและอัปเดตกราฟแล้ว!");
+    }
+
+    // ฟังก์ชันสร้างระบบกราฟ (Chart.js)
+    function initChart() {
+        const ctx = document.getElementById('bmiChart').getContext('2d');
+        bmiChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [], // ครั้งที่กรอกข้อมูล เช่น ครั้งที่ 1, ครั้งที่ 2
+                datasets: [{
+                    label: 'ค่า BMI ของคุณ',
+                    data: [], // ค่า bmi ที่บันทึก
+                    borderColor: '#3498db',
+                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.3, // ทำให้เส้นกราฟมีความโค้งมนสวยงาม
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        min: 10,
+                        max: 40,
+                        title: { display: true, text: 'ค่า BMI' }
+                    }
+                }
+            }
+        });
+    }
+
+    // ฟังก์ชันอัปเดตข้อมูลบนกราฟเมื่อมีการกดบันทึกใหม่
+    function updateChart() {
+        const labels = bmiHistory.map(item => item.times);
+        const data = bmiHistory.map(item => item.value);
+
+        bmiChart.data.labels = labels;
+        bmiChart.data.datasets[0].data = data;
+        bmiChart.update(); // สั่งให้กราฟวาดเส้นใหม่ตามข้อมูลปัจจุบัน
     }
 </script>
 
