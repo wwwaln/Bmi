@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกสุขภาพ BMI (แดชบอร์ดกราฟคู่ + เมนูระบุกรัม)</title>
+    <title>ระบบบันทึกสุขภาพ BMI (แก้ไขกราฟคู่ต่างสี + จัดกลุ่มสัปดาห์อัจฉริยะ)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
@@ -29,23 +29,26 @@
         .profile-avatar { width: 50px; height: 50px; border-radius: 50%; background: #ddd; display: flex; justify-content: center; align-items: center; font-size: 24px; border: 2px solid #3498db; object-fit: cover; }
         .mini-btn { padding: 8px 16px; font-size: 13px; width: auto; }
         
-        /* แบ่งหน้าตาแดชบอร์ด */
         .dashboard-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
         @media (max-width: 850px) { .dashboard-layout { grid-template-columns: 1fr; } }
         
-        /* แบ่งกล่องกราฟให้แสดงคู่กัน */
+        /* สไตล์โซนกราฟเปรียบเทียบความแตกต่างชัดเจน */
         .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
         @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
 
-        .chart-container { background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #eee; }
+        .chart-container { background: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
+        .chart-title-line { font-size: 13px; text-align: center; margin-bottom: 8px; color: #1e3a8a; font-weight: bold; }
+        .chart-title-bar { font-size: 13px; text-align: center; margin-bottom: 8px; color: #c2410c; font-weight: bold; }
+
         .table-container { max-height: 180px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
         th, td { padding: 10px 6px; border-bottom: 1px solid #ddd; }
         th { background-color: #f8f9fa; color: #555; position: sticky; top: 0; z-index: 10; }
         .delete-btn { background: #e74c3c; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; border: none; cursor: pointer; }
         
-        .summary-stats-box { background: #eef9ff; border: 1px solid #bbe3ff; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
-        .summary-stats-box span { font-size: 20px; font-weight: bold; color: #2c3e50; }
+        .summary-stats-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .summary-stats-box p { font-size: 14px; color: #166534; font-weight: 600; }
+        .summary-stats-box span { font-size: 24px; font-weight: bold; color: #14532d; }
         .rank-badge { background: #f1c40f; color: #2c3e50; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
         .calorie-box { background: #e8f4fd; border-left: 5px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
@@ -106,7 +109,7 @@
             <div>
                 <h3>📝 บันทึกข้อมูลสุขภาพ</h3>
                 <form onsubmit="goToBentoPage(event)">
-                    <div class="form-group"><label>วันที่บันทึก</label><input type="date" id="record-date" required></div>
+                    <div class="form-group"><label>วันที่บันทึก (เลือกวันเพื่อแบ่งสัปดาห์ในกราฟ)</label><input type="date" id="record-date" required></div>
                     <div class="row">
                         <div class="form-group"><label>น้ำหนัก (กก.)</label><input type="number" id="weight" step="0.1" required placeholder="60"></div>
                         <div class="form-group"><label>ส่วนสูง (ซม.)</label><input type="number" id="height" required placeholder="165"></div>
@@ -131,17 +134,17 @@
             
             <div>
                 <div class="summary-stats-box">
-                    <p>📊 ค่าเฉลี่ย BMI ประจำเดือนนี้</p>
+                    <p>📅 ค่าเฉลี่ย BMI ของเดือนที่เลือกกรอกล่าสุด</p>
                     <span id="monthly-average-bmi">--</span>
                 </div>
 
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <h4 style="font-size:12px; text-align:center; margin-bottom:5px; color:#555;">📈 แนวโน้มต่อเนื่อง (กราฟเส้น)</h4>
+                        <div class="chart-title-line">📈 แนวโน้มต่อเนื่อง (กราฟเส้น - สีกรมท่า)</div>
                         <canvas id="bmiLineChart"></canvas>
                     </div>
                     <div class="chart-container">
-                        <h4 style="font-size:12px; text-align:center; margin-bottom:5px; color:#555;">📊 เฉลี่ยรายสัปดาห์ (กราฟแท่ง)</h4>
+                        <div class="chart-title-bar">📊 เฉลี่ยรายสัปดาห์ (กราฟแท่ง - สีส้มอิฐ)</div>
                         <canvas id="bmiBarChart"></canvas>
                     </div>
                 </div>
@@ -295,7 +298,6 @@
         document.getElementById('welcome-msg').innerText = userProfile.nickname;
         document.getElementById('record-date').valueAsDate = new Date();
 
-        // รันกราฟทั้งสองตัวพร้อมกัน
         initLineChart();
         initBarChart();
         updateDashboardData();
@@ -329,19 +331,26 @@
         showDashboardView();
     }
 
-    // 📊 ฟังก์ชันจัดการสถิติรายเดือน และอัปเดตข้อมูลเข้าทั้งกราฟเส้น + กราฟแท่ง
+    // 📊 แก้ไขใหม่: จับคู่สัปดาห์ตาม "เดือนและปี" ของข้อมูลล่าสุดที่กรอกเข้ามาจริง ไม่ล็อกแค่เดือนปัจจุบัน
     function calculateStatsAndRenderCharts() {
         const history = userProfile.bmiHistory || [];
-        const currentMonthStr = new Date().toISOString().substring(0, 7); 
+        
+        // หาเดือนและปีของข้อมูลล่าสุดที่บันทึกมา ถ้าไม่มีให้ใช้เดือนปัจจุบัน
+        let targetMonthStr = new Date().toISOString().substring(0, 7); 
+        if(history.length > 0) {
+            targetMonthStr = history[history.length - 1].rawDate.substring(0, 7);
+        }
         
         let monthBmiSum = 0, monthBmiCount = 0;
         let weekData = { w1: [], w2: [], w3: [], w4: [] };
 
         history.forEach(item => {
-            if(item.rawDate && item.rawDate.startsWith(currentMonthStr)) {
+            // คัดกรองข้อมูลให้อยู่ในเดือนเดียวกับข้อมูลล่าสุดที่กรอก
+            if(item.rawDate && item.rawDate.startsWith(targetMonthStr)) {
                 monthBmiSum += item.value;
                 monthBmiCount++;
 
+                // ตัดเอาเฉพาะ "วันที่" มาคิดช่วงสัปดาห์
                 const day = parseInt(item.rawDate.split('-')[2]);
                 if(day <= 7) weekData.w1.push(item.value);
                 else if(day <= 14) weekData.w2.push(item.value);
@@ -350,14 +359,18 @@
             }
         });
 
-        // 1. เฉลี่ยรายเดือน
+        // 1. แสดงหัวข้อเดือนที่กำลังแสดงผล + คำนวณค่าเฉลี่ยประจำเดือนนั้นๆ
+        const monthNames = ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"];
+        const yearY = parseInt(targetMonthStr.split('-')[0]) + 543;
+        const monthM = monthNames[parseInt(targetMonthStr.split('-')[1]) - 1];
+        
         if(monthBmiCount > 0) {
-            document.getElementById('monthly-average-bmi').innerText = (monthBmiSum / monthBmiCount).toFixed(1);
+            document.getElementById('monthly-average-bmi').innerHTML = `<small style="font-size:12px; color:#555;">(${monthM} ${yearY})</small><br>` + (monthBmiSum / monthBmiCount).toFixed(1);
         } else {
             document.getElementById('monthly-average-bmi').innerText = "--";
         }
 
-        // 2. อัปเดตข้อมูลกราฟเส้น (ดึง 8 ข้อมูลล่าสุด)
+        // 2. อัปเดตกราฟเส้นสะสม (ดึง 8 ข้อมูลล่าสุด)
         if(bmiLineChart) {
             const lastRecords = history.slice(-8);
             bmiLineChart.data.labels = lastRecords.map(item => item.date);
@@ -365,10 +378,11 @@
             bmiLineChart.update();
         }
 
-        // 3. อัปเดตข้อมูลกราฟแท่ง (แยกสัปดาห์)
-        const getAvg = (arr) => arr.length > 0 ? (arr.reduce((a,b)=>a+b, 0) / arr.length).toFixed(1) : 0;
+        // 3. อัปเดตกราฟแท่งแยกสัปดาห์รายเดือน (เฉลี่ยแท่งสัปดาห์ละก้อนตามเดือนนั้นๆ)
+        const getAvg = (arr) => arr.length > 0 ? parseFloat((arr.reduce((a,b)=>a+b, 0) / arr.length).toFixed(1)) : 0;
         if(bmiBarChart) {
             bmiBarChart.data.datasets[0].data = [getAvg(weekData.w1), getAvg(weekData.w2), getAvg(weekData.w3), getAvg(weekData.w4)];
+            bmiBarChart.options.plugins.title.text = `สถิติแยกสัปดาห์ของรอบเดือน: ${monthM}`;
             bmiBarChart.update();
         }
     }
@@ -420,7 +434,7 @@
         for (let i = history.length - 1; i >= 0; i--) {
             const data = history[i];
             tableBody.innerHTML += `<tr>
-                <td><strong>${data.date}</strong></td><td>${data.weight} กก.</td><td>${data.height} ซม.</td><td><strong style="color:#2980b9;">${data.value}</strong></td>
+                <td><strong>${data.date}</strong></td><td>${data.weight} กก.</td><td>${data.height} ซม.</td><td><strong style="color:#1e3a8a;">${data.value}</strong></td>
                 <td><button class="delete-btn" onclick="deleteHistoryItem(${data.id})">🗑️</button></td>
             </tr>`;
         }
@@ -472,25 +486,32 @@
     }
     function resetAllMenus() { resetSingleMenu('carbs'); resetSingleMenu('protein'); resetSingleMenu('sides'); }
 
-    // 📈 ฟังก์ชันริเริ่มระบบกราฟเส้น
+    // 📈 ดีไซน์กราฟเส้นโฉมใหม่: สีกรมท่า เส้นหนา ชัดเจน
     function initLineChart() {
         const ctx = document.getElementById('bmiLineChart').getContext('2d');
         if(bmiLineChart) bmiLineChart.destroy();
         bmiLineChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: [], datasets: [{ label: 'BMI ต่อเนื่อง', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.05)', tension: 0.2, fill: true }] },
-            options: { responsive: true, plugins: { datalabels: { display: false } }, scales: { y: { suggestedMin: 16, suggestedMax: 28 } } }
+            data: { labels: [], datasets: [{ label: 'ประวัติฝังแน่น', data: [], borderColor: '#1e3a8a', backgroundColor: 'rgba(30, 58, 138, 0.1)', borderWidth: 3, pointRadius: 5, pointBackgroundColor: '#1d4ed8', tension: 0.1, fill: true }] },
+            options: { responsive: true, plugins: { datalabels: { display: false } }, scales: { y: { suggestedMin: 15, suggestedMax: 30 } } }
         });
     }
 
-    // 📊 ฟังก์ชันริเริ่มระบบกราฟแท่ง
+    // 📊 ดีไซน์กราฟแท่งโฉมใหม่: สีส้มอิฐ แท่งหนา ตัดกับกราฟเส้นชัดเจน
     function initBarChart() {
         const ctx = document.getElementById('bmiBarChart').getContext('2d');
         if(bmiBarChart) bmiBarChart.destroy();
         bmiBarChart = new Chart(ctx, {
             type: 'bar',
-            data: { labels: ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4'], datasets: [{ label: 'เฉลี่ยรายสัปดาห์', data: [0, 0, 0, 0], backgroundColor: '#2ecc71', borderRadius: 4 }] },
-            options: { responsive: true, plugins: { datalabels: { anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 } } }, scales: { y: { beginAtZero: true, max: 35 } } }
+            data: { labels: ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4'], datasets: [{ label: 'เฉลี่ยสัปดาห์นี้', data: [0, 0, 0, 0], backgroundColor: '#ea580c', barPercentage: 0.6, categoryPercentage: 0.7 }] },
+            options: { 
+                responsive: true, 
+                plugins: { 
+                    title: { display: true, text: 'สถิติแยกสัปดาห์', color: '#7c2d12', font: { size: 11, weight: 'normal' } },
+                    datalabels: { anchor: 'end', align: 'top', color: '#7c2d12', font: { weight: 'bold', size: 10 } } 
+                }, 
+                scales: { y: { beginAtZero: true, max: 35 } } 
+            }
         });
     }
 
