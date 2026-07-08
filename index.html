@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกสุขภาพ BMI ออนไลน์ (ใช้แค่ Username)</title>
+    <title>ระบบบันทึกสุขภาพ BMI ออนไลน์ (Username & Password Pure Cloud)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
@@ -27,7 +26,6 @@
         .toggle-text { text-align: center; margin-top: 16px; font-size: 14px; color: #666; }
         .toggle-text a { color: #3498db; text-decoration: none; font-weight: bold; }
         .hidden { display: none !important; }
-        .error-msg { color: #e74c3c; font-size: 13px; margin-top: 4px; display: none; }
         .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #eee; }
         .user-profile-summary { display: flex; align-items: center; gap: 12px; }
         .profile-avatar { width: 50px; height: 50px; border-radius: 50%; background: #ddd; display: flex; justify-content: center; align-items: center; font-size: 24px; border: 2px solid #3498db; object-fit: cover; }
@@ -66,7 +64,7 @@
 <div class="container" id="main-container">
     
     <div id="login-form">
-        <h2>เข้าสู่ระบบส่วนกลาง</h2>
+        <h2>เข้าสู่ระบบส่วนกลาง (Cloud)</h2>
         <form onsubmit="handleLogin(event)">
             <div class="form-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="login-username" required placeholder="ใส่ชื่อผู้ใช้งาน"></div>
             <div class="form-group"><label>รหัสผ่าน</label><input type="password" id="login-password" required placeholder="ใส่รหัสผ่าน"></div>
@@ -76,13 +74,12 @@
     </div>
 
     <div id="signup-form" class="hidden">
-        <h2>สร้างชื่อผู้ใช้ใหม่</h2>
+        <h2>สร้างชื่อผู้ใช้ใหม่ (Cloud)</h2>
         <form onsubmit="handleSignUp(event)">
-            <div class="form-group"><label>ตั้งชื่อผู้ใช้งาน (Username)</label><input type="text" id="signup-username" required placeholder="ภาษาอังกฤษหรือตัวเลข"></div>
+            <div class="form-group"><label>ตั้งชื่อผู้ใช้งาน (Username)</label><input type="text" id="signup-username" required placeholder="เช่นไอดีที่คุณชอบ"></div>
             <div class="form-group">
-                <label>ตั้งรหัสผ่าน (6 ตัวขึ้นไป)</label>
+                <label>ตั้งรหัสผ่าน</label>
                 <input type="password" id="signup-password" required placeholder="ตั้งรหัสผ่าน">
-                <div id="password-error" class="error-msg">รหัสผ่านต้องยาว 6 ตัวขึ้นไปครับ!</div>
             </div>
             <button type="submit">ยืนยันสมัครสมาชิก</button>
         </form>
@@ -200,7 +197,7 @@
 <script>
     Chart.register(ChartDataLabels);
 
-    // 🌟 นำข้อมูลจาก Firebase Console ของคุณมาแปะแทนที่ตรงนี้ครับ!
+    // 🌟 นำข้อมูลจาก Firebase Console ของคุณมาแปะแทนที่ตรงนี้เหมือนเดิมครับ!
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -210,11 +207,10 @@
         appId: "YOUR_APP_ID"
     };
     
-    // เริ่มทำงานคลาวด์ฐานข้อมูลส่วนกลาง
     firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
     const db = firebase.firestore();
 
+    let currentUsername = ""; 
     let userProfile = { nickname: "ผู้ใช้งานคลาวด์", avatarData: "", gender: "ชาย", birthYear: 2550 };
     let bmiHistory = [];
     let bmiLineChart, macroPieChart;
@@ -226,49 +222,74 @@
         overweight: { carbs: ["🌾 ข้าวบุกผสมข้าวกล้อง", "🎃 ฟักทองนึ่ง"], protein: ["🍗 อกไก่นึ่งฉีก", "🐟ปลากระพงนึ่งซีอิ๊ว"], sides: ["🥗 สลัดผักไฮโดร", "🥦 ผักกาดขาวลวก"] }
     };
 
-    // คอยตรวจว่ามีการเข้าระบบค้างไว้หรือไม่
-    auth.onAuthStateChanged(user => {
-        if (user) { fetchUserDataFromCloud(user.uid); } 
-        else { toggleForm('login'); }
-    });
+    // เช็ค session จำเครื่องเบื้องต้นด้วย localStorage เล็กน้อย
+    window.onload = function() {
+        const savedName = localStorage.getItem('logged_username');
+        if(savedName) {
+            currentUsername = savedName;
+            fetchUserDataFromCloud(currentUsername);
+        } else {
+            toggleForm('login');
+        }
+    };
 
     function toggleForm(formType) {
         document.getElementById('login-form').className = formType === 'signup' ? 'hidden' : '';
         document.getElementById('signup-form').className = formType === 'signup' ? '' : 'hidden';
     }
 
-    // สมัครสมาชิกออนไลน์แปลง Username ➔ เติมโดเมนจำลองระบบหลังบ้าน
+    // สมัครสมาชิกผ่าน Firestore ตรงๆ เช็คซ้ำง่ายและแม่นยำขึ้นมาก
     function handleSignUp(event) {
         event.preventDefault();
-        const username = document.getElementById('signup-username').value.trim();
+        const username = document.getElementById('signup-username').value.trim().toLowerCase();
         const password = document.getElementById('signup-password').value;
-        if(password.length < 6) { document.getElementById('password-error').style.display='block'; return; }
-        
-        const fakeEmail = `${username}@bento.com`; // เติมโดเมนลับหลังบ้านเพื่อให้รันข้ามเครื่องได้
 
-        auth.createUserWithEmailAndPassword(fakeEmail, password)
-            .then(cred => {
+        if(!username) return;
+
+        const userRef = db.collection('pure_users').doc(username);
+        
+        userRef.get().then(doc => {
+            if(doc.exists) {
+                alert("ชื่อผู้ใช้งานนี้มีผู้อื่นใช้ไปแล้วจริงๆ ครับ กรุณาใช้ชื่ออื่นน้า");
+            } else {
                 userProfile.nickname = username;
-                return db.collection('users').doc(cred.user.uid).set(userProfile);
-            })
-            .catch(err => alert("ชื่อผู้ใช้นี้อาจถูกใช้ไปแล้ว หรือรูปแบบไม่ถูกต้อง: " + err.message));
+                userProfile.password = password; // เก็บ pass ไว้ตรวจสอบความถูกต้องตอนย้ายเครื่อง
+
+                return userRef.set(userProfile).then(() => {
+                    currentUsername = username;
+                    localStorage.setItem('logged_username', username);
+                    fetchUserDataFromCloud(username);
+                });
+            }
+        }).catch(err => alert("เกิดข้อผิดพลาดคลาวด์: " + err.message));
     }
 
-    // ล็อกอินข้ามเครื่องด้วย Username เดิมและรหัสผ่านเดิม
+    // ล็อกอินเช็คเงื่อนไขรหัสผ่านจากเซิร์ฟเวอร์ย้ายเครื่องได้แน่นอน
     function handleLogin(event) {
         event.preventDefault();
-        const username = document.getElementById('login-username').value.trim();
+        const username = document.getElementById('login-username').value.trim().toLowerCase();
         const password = document.getElementById('login-password').value;
-        const fakeEmail = `${username}@bento.com`;
 
-        auth.signInWithEmailAndPassword(fakeEmail, password)
-            .catch(err => alert("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง"));
+        db.collection('pure_users').doc(username).get().then(doc => {
+            if(doc.exists) {
+                const cloudData = doc.data();
+                if(cloudData.password === password) {
+                    currentUsername = username;
+                    localStorage.setItem('logged_username', username);
+                    fetchUserDataFromCloud(username);
+                } else {
+                    alert("รหัสผ่านไม่ถูกต้อง! กรุณาตรวจสอบอีกครั้ง");
+                }
+            } else {
+                alert("ไม่พบชื่อผู้ใช้งานนี้ในระบบคลาวด์ส่วนกลาง");
+            }
+        }).catch(err => alert("ข้อผิดพลาดเซิร์ฟเวอร์: " + err.message));
     }
 
-    function fetchUserDataFromCloud(uid) {
-        db.collection('users').doc(uid).get().then(doc => {
+    function fetchUserDataFromCloud(username) {
+        db.collection('pure_users').doc(username).get().then(doc => {
             if(doc.exists) userProfile = doc.data();
-            return db.collection('users').doc(uid).collection('bmiHistory').orderBy('timestamp', 'asc').get();
+            return db.collection('pure_users').doc(username).collection('bmiHistory').orderBy('timestamp', 'asc').get();
         }).then(snapshot => {
             bmiHistory = [];
             snapshot.forEach(doc => {
@@ -290,7 +311,7 @@
         initLineChart(); updateLineChart(); updateHistoryTable();
     }
 
-    function handleLogout() { auth.signOut().then(() => location.reload()); }
+    function handleLogout() { localStorage.removeItem('logged_username'); location.reload(); }
 
     function renderAvatarElements(base64Data, imgId, textId) {
         const imgEl = document.getElementById(imgId); const textEl = document.getElementById(textId);
@@ -325,17 +346,15 @@
     }
 
     function saveSettings() {
-        const uid = auth.currentUser.uid;
         userProfile.nickname = document.getElementById('settings-nickname').value || "คุณยูสเซอร์";
         userProfile.gender = document.getElementById('settings-gender').value;
         userProfile.birthYear = parseInt(document.getElementById('settings-birthyear').value) || 2550;
         userProfile.avatarData = tempAvatarBase64;
-        db.collection('users').doc(uid).update(userProfile).then(() => { alert("บันทึกการตั้งค่าลงคลาวด์สำเร็จ!"); showDashboardView(); });
+        db.collection('pure_users').doc(currentUsername).update(userProfile).then(() => { alert("บันทึกการตั้งค่าลงคลาวด์สำเร็จ!"); showDashboardView(); });
     }
 
     function goToBentoPage(event) {
         event.preventDefault();
-        const uid = auth.currentUser.uid;
         const weight = parseFloat(document.getElementById('weight').value);
         const height = parseFloat(document.getElementById('height').value);
         const allergy = document.getElementById('allergy').value || "ไม่มี";
@@ -347,8 +366,8 @@
         const bmi = parseFloat((weight / (heightM * heightM)).toFixed(1));
 
         const newData = { date: formattedDate, weight: weight, height: height, value: bmi, allergy: allergy, disease: disease, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-        db.collection('users').doc(uid).collection('bmiHistory').add(newData).then(() => {
-            fetchUserDataFromCloud(uid);
+        db.collection('pure_users').doc(currentUsername).collection('bmiHistory').add(newData).then(() => {
+            fetchUserDataFromCloud(currentUsername);
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('bento-page').classList.remove('hidden');
             document.getElementById('main-container').className = 'container bento-mode';
@@ -359,8 +378,8 @@
 
     function deleteHistoryItem(index) {
         if(confirm("ยืนยันลบประวัตินี้ออกจากคลาวด์ส่วนกลาง?")) {
-            const uid = auth.currentUser.uid; const docId = bmiHistory[index].id;
-            db.collection('users').doc(uid).collection('bmiHistory').doc(docId).delete().then(() => { fetchUserDataFromCloud(uid); });
+            const docId = bmiHistory[index].id;
+            db.collection('pure_users').doc(currentUsername).collection('bmiHistory').doc(docId).delete().then(() => { fetchUserDataFromCloud(currentUsername); });
         }
     }
 
