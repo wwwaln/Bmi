@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกสุขภาพ BMI ออนไลน์ (ข้ามเครื่องได้)</title>
+    <title>ระบบบันทึกสุขภาพ BMI ออนไลน์ (ใช้แค่ Username)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -66,27 +66,27 @@
 <div class="container" id="main-container">
     
     <div id="login-form">
-        <h2>เข้าสู่ระบบ (Online)</h2>
+        <h2>เข้าสู่ระบบส่วนกลาง</h2>
         <form onsubmit="handleLogin(event)">
-            <div class="form-group"><label>อีเมลผู้ใช้งาน</label><input type="email" id="login-email" required placeholder="ใส่ごอีเมล เช่น user@test.com"></div>
+            <div class="form-group"><label>ชื่อผู้ใช้งาน (Username)</label><input type="text" id="login-username" required placeholder="ใส่ชื่อผู้ใช้งาน"></div>
             <div class="form-group"><label>รหัสผ่าน</label><input type="password" id="login-password" required placeholder="ใส่รหัสผ่าน"></div>
             <button type="submit">เข้าสู่ระบบ</button>
         </form>
-        <div class="toggle-text">ยังไม่มีบัญชีส่วนกลาง? <a href="#" onclick="toggleForm('signup')">สร้างบัญชีออนไลน์ที่นี่</a></div>
+        <div class="toggle-text">ยังไม่มีบัญชีข้ามเครื่อง? <a href="#" onclick="toggleForm('signup')">สมัครสร้างชื่อผู้ใช้ใหม่ที่นี่</a></div>
     </div>
 
     <div id="signup-form" class="hidden">
-        <h2>สร้างบัญชีออนไลน์</h2>
+        <h2>สร้างชื่อผู้ใช้ใหม่</h2>
         <form onsubmit="handleSignUp(event)">
-            <div class="form-group"><label>อีเมล</label><input type="email" id="signup-email" required placeholder="เช่น user@test.com"></div>
+            <div class="form-group"><label>ตั้งชื่อผู้ใช้งาน (Username)</label><input type="text" id="signup-username" required placeholder="ภาษาอังกฤษหรือตัวเลข"></div>
             <div class="form-group">
-                <label>รหัสผ่าน (6 ตัวขึ้นไปตามกฎ Firebase)</label>
+                <label>ตั้งรหัสผ่าน (6 ตัวขึ้นไป)</label>
                 <input type="password" id="signup-password" required placeholder="ตั้งรหัสผ่าน">
-                <div id="password-error" class="error-msg">รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร!</div>
+                <div id="password-error" class="error-msg">รหัสผ่านต้องยาว 6 ตัวขึ้นไปครับ!</div>
             </div>
             <button type="submit">ยืนยันสมัครสมาชิก</button>
         </form>
-        <div class="toggle-text">มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleForm('login')">เข้าสู่ระบบที่นี่</a></div>
+        <div class="toggle-text">มีบัญชีอยู่แล้ว? <a href="#" onclick="toggleForm('login')">เข้าสู่ระบบตรงนี้</a></div>
     </div>
 
     <div id="dashboard" class="hidden">
@@ -95,7 +95,7 @@
                 <img id="header-avatar-img" class="profile-avatar hidden" alt="Profile">
                 <div id="header-avatar-text" class="profile-avatar">👤</div>
                 <div>
-                    <div style="font-size: 12px; color: #777;">สวัสดีครับคลาวด์</div>
+                    <div style="font-size: 12px; color: #777;">สวัสดีระบบคลาวด์</div>
                     <strong id="welcome-msg" style="font-size: 16px;">คุณ ยูสเซอร์</strong>
                 </div>
             </div>
@@ -130,7 +130,7 @@
                             <tr><th>วันที่บันทึก</th><th>น้ำหนัก</th><th>ส่วนสูง</th><th>BMI</th><th>จัดการ</th></tr>
                         </thead>
                         <tbody id="history-table-body">
-                            <tr><td colspan="5" style="color: #999; padding: 20px;">กำลังดึงข้อมูลจากระบบคลาวด์...</td></tr>
+                            <tr><td colspan="5" style="color: #999; padding: 20px;">กำลังโหลดฐานข้อมูลจากคลาวด์ส่วนกลาง...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -200,7 +200,7 @@
 <script>
     Chart.register(ChartDataLabels);
 
-    // 🌟 เอาค่าจาก Firebase Console ของคุณมาแปะใส่ตรงนี้ได้เลยครับ!
+    // 🌟 นำข้อมูลจาก Firebase Console ของคุณมาแปะแทนที่ตรงนี้ครับ!
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -210,7 +210,7 @@
         appId: "YOUR_APP_ID"
     };
     
-    // เริ่มทำงานระบบเซิร์ฟเวอร์กลาง
+    // เริ่มทำงานคลาวด์ฐานข้อมูลส่วนกลาง
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
@@ -226,13 +226,10 @@
         overweight: { carbs: ["🌾 ข้าวบุกผสมข้าวกล้อง", "🎃 ฟักทองนึ่ง"], protein: ["🍗 อกไก่นึ่งฉีก", "🐟ปลากระพงนึ่งซีอิ๊ว"], sides: ["🥗 สลัดผักไฮโดร", "🥦 ผักกาดขาวลวก"] }
     };
 
-    // คอยตรวจว่ามีการเข้าระบบค้างไว้จากเครื่องนี้หรือไม่
+    // คอยตรวจว่ามีการเข้าระบบค้างไว้หรือไม่
     auth.onAuthStateChanged(user => {
-        if (user) {
-            fetchUserDataFromCloud(user.uid);
-        } else {
-            toggleForm('login');
-        }
+        if (user) { fetchUserDataFromCloud(user.uid); } 
+        else { toggleForm('login'); }
     });
 
     function toggleForm(formType) {
@@ -240,42 +237,42 @@
         document.getElementById('signup-form').className = formType === 'signup' ? '' : 'hidden';
     }
 
-    // สมัครสมาชิกส่วนกลางข้ามเครื่อง
+    // สมัครสมาชิกออนไลน์แปลง Username ➔ เติมโดเมนจำลองระบบหลังบ้าน
     function handleSignUp(event) {
         event.preventDefault();
-        const email = document.getElementById('signup-email').value;
+        const username = document.getElementById('signup-username').value.trim();
         const password = document.getElementById('signup-password').value;
         if(password.length < 6) { document.getElementById('password-error').style.display='block'; return; }
+        
+        const fakeEmail = `${username}@bento.com`; // เติมโดเมนลับหลังบ้านเพื่อให้รันข้ามเครื่องได้
 
-        auth.createUserWithEmailAndPassword(email, password)
+        auth.createUserWithEmailAndPassword(fakeEmail, password)
             .then(cred => {
+                userProfile.nickname = username;
                 return db.collection('users').doc(cred.user.uid).set(userProfile);
             })
-            .catch(err => alert("เกิดข้อผิดพลาดในการสมัคร: " + err.message));
+            .catch(err => alert("ชื่อผู้ใช้นี้อาจถูกใช้ไปแล้ว หรือรูปแบบไม่ถูกต้อง: " + err.message));
     }
 
-    // ล็อกอินข้ามเครื่องด้วยรหัสเดียวกัน
+    // ล็อกอินข้ามเครื่องด้วย Username เดิมและรหัสผ่านเดิม
     function handleLogin(event) {
         event.preventDefault();
-        const email = document.getElementById('login-email').value;
+        const username = document.getElementById('login-username').value.trim();
         const password = document.getElementById('login-password').value;
+        const fakeEmail = `${username}@bento.com`;
 
-        auth.signInWithEmailAndPassword(email, password)
-            .catch(err => alert("อีเมลหรือรหัสผ่านผิดพลาด! " + err.message));
+        auth.signInWithEmailAndPassword(fakeEmail, password)
+            .catch(err => alert("ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง! กรุณาลองใหม่อีกครั้ง"));
     }
 
-    // ดึงข้อมูลจริงจากระบบ Cloud มาแสดงผลทันที
     function fetchUserDataFromCloud(uid) {
         db.collection('users').doc(uid).get().then(doc => {
             if(doc.exists) userProfile = doc.data();
-            
             return db.collection('users').doc(uid).collection('bmiHistory').orderBy('timestamp', 'asc').get();
         }).then(snapshot => {
             bmiHistory = [];
             snapshot.forEach(doc => {
-                let data = doc.data();
-                data.id = doc.id; // เก็บ ID สำหรับการกดลบข้อมูลรายแถว
-                bmiHistory.push(data);
+                let data = doc.data(); data.id = doc.id; bmiHistory.push(data);
             });
             showDashboardView();
         });
@@ -288,22 +285,15 @@
         document.getElementById('profile-page').classList.add('hidden');
         document.getElementById('dashboard').classList.remove('hidden');
         document.getElementById('main-container').className = 'container dashboard-mode';
-        
         document.getElementById('welcome-msg').innerText = userProfile.nickname;
         renderAvatarElements(userProfile.avatarData, 'header-avatar-img', 'header-avatar-text');
-
-        initLineChart();
-        updateLineChart();
-        updateHistoryTable();
+        initLineChart(); updateLineChart(); updateHistoryTable();
     }
 
-    function handleLogout() {
-        auth.signOut().then(() => location.reload());
-    }
+    function handleLogout() { auth.signOut().then(() => location.reload()); }
 
     function renderAvatarElements(base64Data, imgId, textId) {
-        const imgEl = document.getElementById(imgId);
-        const textEl = document.getElementById(textId);
+        const imgEl = document.getElementById(imgId); const textEl = document.getElementById(textId);
         if (base64Data) { imgEl.src = base64Data; imgEl.classList.remove('hidden'); textEl.classList.add('hidden'); } 
         else { imgEl.classList.add('hidden'); textEl.classList.remove('hidden'); }
     }
@@ -312,10 +302,7 @@
     function previewImage(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
-            reader.onload = function(e) {
-                tempAvatarBase64 = e.target.result;
-                renderAvatarElements(tempAvatarBase64, 'profile-page-avatar-img', 'profile-page-avatar-text');
-            };
+            reader.onload = function(e) { tempAvatarBase64 = e.target.result; renderAvatarElements(tempAvatarBase64, 'profile-page-avatar-img', 'profile-page-avatar-text'); };
             reader.readAsDataURL(input.files[0]);
         }
     }
@@ -324,14 +311,11 @@
         document.getElementById('dashboard').classList.add('hidden');
         document.getElementById('profile-page').classList.remove('hidden');
         document.getElementById('main-container').className = 'container profile-mode';
-
         document.getElementById('settings-nickname').value = userProfile.nickname || "";
         document.getElementById('settings-gender').value = userProfile.gender || "ชาย";
         document.getElementById('settings-birthyear').value = userProfile.birthYear || 2550;
-        
         tempAvatarBase64 = userProfile.avatarData || "";
         renderAvatarElements(tempAvatarBase64, 'profile-page-avatar-img', 'profile-page-avatar-text');
-
         if(bmiHistory.length > 0) {
             const latest = bmiHistory[bmiHistory.length - 1];
             document.getElementById('badge-weight').innerText = latest.weight;
@@ -346,11 +330,7 @@
         userProfile.gender = document.getElementById('settings-gender').value;
         userProfile.birthYear = parseInt(document.getElementById('settings-birthyear').value) || 2550;
         userProfile.avatarData = tempAvatarBase64;
-
-        db.collection('users').doc(uid).update(userProfile).then(() => {
-            alert("อัปเดตข้อมูลขึ้นคลาวด์ส่วนกลางเรียบร้อย!");
-            showDashboardView();
-        });
+        db.collection('users').doc(uid).update(userProfile).then(() => { alert("บันทึกการตั้งค่าลงคลาวด์สำเร็จ!"); showDashboardView(); });
     }
 
     function goToBentoPage(event) {
@@ -363,15 +343,12 @@
         const rawDate = document.getElementById('record-date').value;
         const dateParts = rawDate.split('-');
         const formattedDate = `${dateParts[2]}/${dateParts[1]}/${parseInt(dateParts[0])+543}`; 
-
         const heightM = height / 100;
         const bmi = parseFloat((weight / (heightM * heightM)).toFixed(1));
 
         const newData = { date: formattedDate, weight: weight, height: height, value: bmi, allergy: allergy, disease: disease, timestamp: firebase.firestore.FieldValue.serverTimestamp() };
-
         db.collection('users').doc(uid).collection('bmiHistory').add(newData).then(() => {
-            fetchUserDataFromCloud(uid); // โหลดฐานข้อมูลชุดล่าสุด
-            
+            fetchUserDataFromCloud(uid);
             document.getElementById('dashboard').classList.add('hidden');
             document.getElementById('bento-page').classList.remove('hidden');
             document.getElementById('main-container').className = 'container bento-mode';
@@ -381,13 +358,9 @@
     }
 
     function deleteHistoryItem(index) {
-        if(confirm("ยืนยันลบประวัตินี้ออกจากระบบเซิร์ฟเวอร์กลางอย่างถาวร?")) {
-            const uid = auth.currentUser.uid;
-            const docId = bmiHistory[index].id;
-            
-            db.collection('users').doc(uid).collection('bmiHistory').doc(docId).delete().then(() => {
-                fetchUserDataFromCloud(uid);
-            });
+        if(confirm("ยืนยันลบประวัตินี้ออกจากคลาวด์ส่วนกลาง?")) {
+            const uid = auth.currentUser.uid; const docId = bmiHistory[index].id;
+            db.collection('users').doc(uid).collection('bmiHistory').doc(docId).delete().then(() => { fetchUserDataFromCloud(uid); });
         }
     }
 
@@ -409,31 +382,22 @@
     function generateBentoPlan(bmi, weight, height) {
         const age = (new Date().getFullYear() + 543) - userProfile.birthYear;
         let bmr = (userProfile.gender === 'ชาย') ? (10 * weight) + (6.25 * height) - (5 * age) + 5 : (10 * weight) + (6.25 * height) - (5 * age) - 161;
-        let tdee = Math.round(bmr * 1.3);
-        let carbRatio, proteinRatio, fatRatio;
-
+        let tdee = Math.round(bmr * 1.3); let carbRatio, proteinRatio, fatRatio;
         if (bmi < 18.5) { currentBmiCategory = "underweight"; carbRatio = 50; proteinRatio = 30; fatRatio = 20; tdee += 300; } 
         else if (bmi < 23.0) { currentBmiCategory = "normal"; carbRatio = 45; proteinRatio = 30; fatRatio = 25; } 
         else { currentBmiCategory = "overweight"; carbRatio = 35; proteinRatio = 45; fatRatio = 20; tdee -= 350; }
-
         document.getElementById('bento-bmi-status').innerText = bmi < 18.5 ? "ผอม" : bmi < 23.0 ? "ปกติ" : "เกินเกณฑ์";
         document.getElementById('total-calories').innerText = tdee;
         document.getElementById('breakfast-cal').innerText = Math.round(tdee * 0.3);
         document.getElementById('lunch-cal').innerText = Math.round(tdee * 0.4);
         document.getElementById('dinner-cal').innerText = Math.round(tdee * 0.3);
-
         document.getElementById('grams-carbs').innerText = Math.round((tdee * (carbRatio / 100)) / 4);
         document.getElementById('grams-protein').innerText = Math.round((tdee * (proteinRatio / 100)) / 4);
         document.getElementById('grams-fat').innerText = Math.round((tdee * (fatRatio / 100)) / 9);
-
-        resetAllMenus();
-        initPieChart(carbRatio, proteinRatio, fatRatio);
+        resetAllMenus(); initPieChart(carbRatio, proteinRatio, fatRatio);
     }
 
-    function resetSingleMenu(type) {
-        const pool = foodDatabase[currentBmiCategory][type];
-        document.getElementById(`bento-${type}`).innerText = pool[Math.floor(Math.random() * pool.length)];
-    }
+    function resetSingleMenu(type) { const pool = foodDatabase[currentBmiCategory][type]; document.getElementById(`bento-${type}`).innerText = pool[Math.floor(Math.random() * pool.length)]; }
     function resetAllMenus() { resetSingleMenu('carbs'); resetSingleMenu('protein'); resetSingleMenu('sides'); }
 
     function initLineChart() {
@@ -445,22 +409,10 @@
             options: { responsive: true, scales: { x: { grid: { display: true } }, y: { beginAtZero: false, grid: { display: true } } }, plugins: { datalabels: { align: 'top', anchor: 'end', backgroundColor: '#2c3e50', borderRadius: 4, color: 'white', padding: 4 } } }
         });
     }
-
-    function updateLineChart() {
-        if(!bmiLineChart) return;
-        bmiLineChart.data.labels = bmiHistory.map(item => item.date);
-        bmiLineChart.data.datasets[0].data = bmiHistory.map(item => item.value);
-        bmiLineChart.update();
-    }
-
+    function updateLineChart() { if(!bmiLineChart) return; bmiLineChart.data.labels = bmiHistory.map(item => item.date); bmiLineChart.data.datasets[0].data = bmiHistory.map(item => item.value); bmiLineChart.update(); }
     function initPieChart(carbs, protein, fat) {
-        const ctx = document.getElementById('macroPieChart').getContext('2d');
-        if (macroPieChart) { macroPieChart.destroy(); }
-        macroPieChart = new Chart(ctx, {
-            type: 'pie',
-            data: { labels: ['คาร์บ', 'โปรตีน', 'ไขมันดี'], datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#e67e22'] }] },
-            options: { responsive: true, plugins: { datalabels: { display: false } } }
-        });
+        const ctx = document.getElementById('macroPieChart').getContext('2d'); if (macroPieChart) { macroPieChart.destroy(); }
+        macroPieChart = new Chart(ctx, { type: 'pie', data: { labels: ['คาร์บ', 'โปรตีน', 'ไขมันดี'], datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#e67e22'] }] }, options: { responsive: true, plugins: { datalabels: { display: false } } } });
     }
 </script>
 </body>
