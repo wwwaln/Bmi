@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกสุขภาพ BMI (กราฟเส้น + เมนูระบุกรัมจัดเต็ม)</title>
+    <title>ระบบบันทึกสุขภาพ BMI (แดชบอร์ดกราฟคู่ + เมนูระบุกรัม)</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
         body { background: #f4f6f9; color: #333; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { background: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1); width: 100%; max-width: 450px; transition: max-width 0.4s ease; }
-        .container.dashboard-mode { max-width: 1000px; }
+        .container.dashboard-mode { max-width: 1100px; }
         .container.bento-mode { max-width: 700px; }
         .container.profile-mode { max-width: 500px; }
         h2, h3 { text-align: center; margin-bottom: 20px; color: #2c3e50; }
@@ -28,9 +28,16 @@
         .user-profile-summary { display: flex; align-items: center; gap: 12px; }
         .profile-avatar { width: 50px; height: 50px; border-radius: 50%; background: #ddd; display: flex; justify-content: center; align-items: center; font-size: 24px; border: 2px solid #3498db; object-fit: cover; }
         .mini-btn { padding: 8px 16px; font-size: 13px; width: auto; }
-        .dashboard-layout { display: grid; grid-template-columns: 1fr 1.3fr; gap: 24px; }
-        @media (max-width: 768px) { .dashboard-layout { grid-template-columns: 1fr; } }
-        .chart-container { margin-top: 10px; background: #fafafa; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 20px; }
+        
+        /* แบ่งหน้าตาแดชบอร์ด */
+        .dashboard-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
+        @media (max-width: 850px) { .dashboard-layout { grid-template-columns: 1fr; } }
+        
+        /* แบ่งกล่องกราฟให้แสดงคู่กัน */
+        .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+
+        .chart-container { background: #fafafa; padding: 12px; border-radius: 8px; border: 1px solid #eee; }
         .table-container { max-height: 180px; overflow-y: auto; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 20px; }
         table { width: 100%; border-collapse: collapse; text-align: center; font-size: 13px; }
         th, td { padding: 10px 6px; border-bottom: 1px solid #ddd; }
@@ -47,13 +54,11 @@
         .macro-grams-box { display: flex; justify-content: space-around; background: #fffdf4; border: 1px dashed #f1c40f; padding: 10px; border-radius: 6px; margin-bottom: 25px; font-size: 13px; text-align: center; }
         .pie-box { max-width: 260px; margin: 0 auto 20px auto; }
         
-        /* สไตล์กล่องเบนโตะญี่ปุ่น */
         .bento-container { background: #2c2c2c; border: 12px solid #c0392b; border-radius: 14px; padding: 15px; display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: auto auto; gap: 12px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
         .bento-section { background: #fffdf9; border: 3px solid #c0392b; border-radius: 8px; padding: 12px; min-height: 115px; position: relative; }
         .bento-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
         .bento-title { font-size: 11px; font-weight: bold; color: #fff; background: #c0392b; padding: 2px 8px; border-radius: 4px; }
-        .reset-mini-btn { background: none; color: #c0392b; border: 1px solid #c0392b; padding: 1px 6px; font-size: 11px; border-radius: 4px; width: auto; font-weight: normal; cursor: pointer; }
-        .reset-mini-btn:hover { background: #c0392b; color: white; }
+        .reset-mini-btn { background: none; color: #c0392b; border: 1px solid #c0392b; padding: 1px 6px; font-size: 11px; border-radius: 4px; width: auto; cursor: pointer; }
         .bento-menu-item { font-size: 14px; color: #333; font-weight: bold; line-height: 1.5; margin-top: 5px;}
         .bento-actions { display: flex; gap: 10px; margin-top: 20px; }
         .logout-section { border-top: 2px dashed #eee; margin-top: 25px; padding-top: 15px; }
@@ -88,7 +93,7 @@
             <div class="user-profile-summary">
                 <div id="header-avatar-text" class="profile-avatar">👤</div>
                 <div>
-                    <div style="font-size: 12px; color: #777;">ผู้ใช้งานระบบคลาวด์จำลองจำเครื่อง</div>
+                    <div style="font-size: 12px; color: #777;">ระบบจัดการฐานข้อมูลออฟไลน์</div>
                     <strong id="welcome-msg" style="font-size: 16px;">คุณ ยูสเซอร์</strong>
                 </div>
             </div>
@@ -130,8 +135,16 @@
                     <span id="monthly-average-bmi">--</span>
                 </div>
 
-                <h3>📈 กราฟเส้นแนวโน้มการเปลี่ยนแปลง BMI ของคุณ</h3>
-                <div class="chart-container"><canvas id="bmiLineChart"></canvas></div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h4 style="font-size:12px; text-align:center; margin-bottom:5px; color:#555;">📈 แนวโน้มต่อเนื่อง (กราฟเส้น)</h4>
+                        <canvas id="bmiLineChart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h4 style="font-size:12px; text-align:center; margin-bottom:5px; color:#555;">📊 เฉลี่ยรายสัปดาห์ (กราฟแท่ง)</h4>
+                        <canvas id="bmiBarChart"></canvas>
+                    </div>
+                </div>
                 
                 <h3>📋 ประวัติบันทึกทั้งหมด</h3>
                 <div class="table-container">
@@ -198,13 +211,12 @@
     let currentUsername = ""; 
     let allUsersData = JSON.parse(localStorage.getItem('bento_local_users')) || {};
     let userProfile = { nickname: "", gender: "ชาย", birthYear: 2550, bmiHistory: [] };
-    let bmiLineChart, macroPieChart;
+    let bmiLineChart, bmiBarChart, macroPieChart;
     let currentBmiCategory = "normal";
 
-    // 🌟 คลังเมนูอาหารเพิ่มขึ้นแบบจัดเต็มระบุปริมาณเป็นกรัม (g)
     const foodDatabase = {
         underweight: { 
-            carbs: ["🍚 ข้าวญี่ปุ่นนุ่มๆ (160g)", "🍠 มันหวานญี่ปุ่นนึ่ง (150g)", "เส้นพาสต้าโฮลวีต (140g)", "🥔 มันฝรั่งอบเนยกระเทียม (180g)", " ข้าวเหนียวลืมผัว (120g)"], 
+            carbs: ["🍚 ข้าวญี่ปุ่นนุ่มๆ (160g)", "🍠 มันหวานญี่ปุ่นนึ่ง (150g)", "เส้นพาสต้าโฮลวีต (140g)", "🥔 มันฝรั่งอบเนยกระเทียม (180g)", "🌾 ข้าวเหนียวลืมผัว (120g)"], 
             protein: ["🍳 หมูสไลด์ผัดซีอิ๊วญี่ปุ่น (140g)", "🥩 เนื้อวัวย่างออสเตรเลีย (130g)", "🍗 สะโพกไก่ทอดไร้น้ำมัน (150g)", "🐟 ปลาแซลมอนอบเนย (140g)", "🍳 ไข่ม้วนญี่ปุ่นหนานุ่ม (3 ฟอง - 150g)"], 
             sides: ["🥗 มันฝรั่งบดผสมข้าวโพด (100g)", "🥦 บล็อคโคลี่ผัดน้ำมันหอย (120g)", "🥑 อะโวคาโดสดสไลด์ (80g)", "🥬 ผักโขมผัดกระเทียม (100g)", "🥜 ถั่วแระญี่ปุ่นต้มเกลือ (60g)"] 
         },
@@ -214,9 +226,9 @@
             sides: ["🥦 บล็อคโคลี่และแครอทต้ม (100g)", "🥬 กิมจิเกาหลีโฮมเมด (80g)", "🥗 สลัดผักกรีนโอ๊คราดน้ำสลัดงาญี่ปุ่น (120g)", "🍄 เห็ดออรินจิย่างซีอิ๊ว (90g)", "🥒 แตงกวาผัดไข่ใส่น้ำมันมะกอก (100g)"] 
         },
         overweight: { 
-            carbs: ["🌾 ข้าวบุกผสมข้าวกล้องสัดส่วนต่ำ (100g)", "🎃 ฟักทองไทยนึ่งสุก (120g)", "เส้นบุกคีโตลวกสะอาด (150g)", " ข้าวไรซ์เบอร์รี่ผสมบุก (90g)", "🍠 มันแกวสดแช่เย็นหั่นชิ้น (130g)"], 
+            carbs: ["🌾 ข้าวบุกผสมข้าวกล้อง (100g)", "🎃 ฟักทองไทยนึ่งสุก (120g)", "เส้นบุกคีโตลวกสะอาด (150g)", "🌾 ข้าวไรซ์เบอร์รี่ผสมบุก (90g)", "🍠 มันแกวสดแช่เย็นหั่นชิ้น (130g)"], 
             protein: ["🍗 อกไก่นึ่งฉีกพริกไทยดำ (150g)", "🐟 ปลากระพงขาวนึ่งซีอิ๊วโซเดียมต่ำ (180g)", "🍳 ไข่ต้มสุกไร้ไข่แดง (3 ฟอง - 100g)", "🐟 ปลาทูน่าในน้ำแร่บีบแห้ง (140g)", "🥩 เนื้ออกไก่สับคั่วกลิ้งแห้ง (150g)"], 
-            sides: ["🥗 สลัดผักไฮโดรโปนิกส์หลากสี (150g)", "🥬 ผักกาดขาวและกะหล่ำปลีลวก (140g)", "🍄 เห็ดเข็มทองและเห็ดหอมนึ่ง (120g)", " asparagus หน่อไม้ฝรั่งย่างเกลือชมพู (80g)", "ผักบุ้งจีนลวกจิ้มแจ่วอีสาน (100g)"] 
+            sides: ["🥗 สลัดผักไฮโดรโปนิกส์หลากสี (150g)", "🥬 ผักกาดขาวและกะหล่ำปลีลวก (140g)", "🍄 เห็ดเข็มทองและเห็ดหอมนึ่ง (120g)", "🥒 หน่อไม้ฝรั่งย่างเกลือชมพู (80g)", "🥬 ผักบุ้งจีนลวกจิ้มแจ่วอีสาน (100g)"] 
         }
     };
 
@@ -248,7 +260,7 @@
 
         allUsersData[username] = { username: username, password: password, nickname: username, gender: "ชาย", birthYear: 2550, bmiHistory: [] };
         saveAllData();
-        alert("สมัครสมาชิกเสร็จเรียบร้อย! สามารถเข้าสู่ระบบได้เลยครับ");
+        alert("สมัครสมาชิกสำเร็จ!");
         toggleForm('login');
     }
 
@@ -283,14 +295,16 @@
         document.getElementById('welcome-msg').innerText = userProfile.nickname;
         document.getElementById('record-date').valueAsDate = new Date();
 
-        initLineChart(); // คืนชีพกราฟเส้น
+        // รันกราฟทั้งสองตัวพร้อมกัน
+        initLineChart();
+        initBarChart();
         updateDashboardData();
     }
 
     function updateDashboardData() {
         updateHistoryTable();
         updateRankTable();
-        calculateMonthlyStatsAndGraph();
+        calculateStatsAndRenderCharts();
     }
 
     function handleLogout() {
@@ -315,32 +329,47 @@
         showDashboardView();
     }
 
-    // ฟังก์ชันคำนวณเฉลี่ยรายเดือนและดึงข้อมูลลงกราฟเส้น
-    function calculateMonthlyStatsAndGraph() {
+    // 📊 ฟังก์ชันจัดการสถิติรายเดือน และอัปเดตข้อมูลเข้าทั้งกราฟเส้น + กราฟแท่ง
+    function calculateStatsAndRenderCharts() {
         const history = userProfile.bmiHistory || [];
         const currentMonthStr = new Date().toISOString().substring(0, 7); 
         
         let monthBmiSum = 0, monthBmiCount = 0;
+        let weekData = { w1: [], w2: [], w3: [], w4: [] };
 
         history.forEach(item => {
             if(item.rawDate && item.rawDate.startsWith(currentMonthStr)) {
                 monthBmiSum += item.value;
                 monthBmiCount++;
+
+                const day = parseInt(item.rawDate.split('-')[2]);
+                if(day <= 7) weekData.w1.push(item.value);
+                else if(day <= 14) weekData.w2.push(item.value);
+                else if(day <= 21) weekData.w3.push(item.value);
+                else weekData.w4.push(item.value);
             }
         });
 
+        // 1. เฉลี่ยรายเดือน
         if(monthBmiCount > 0) {
             document.getElementById('monthly-average-bmi').innerText = (monthBmiSum / monthBmiCount).toFixed(1);
         } else {
             document.getElementById('monthly-average-bmi').innerText = "--";
         }
 
-        // อัปเดตข้อมูลเข้าสู่กราฟเส้น (ดึง 8 ข้อมูลล่าสุดมาพล็อต)
+        // 2. อัปเดตข้อมูลกราฟเส้น (ดึง 8 ข้อมูลล่าสุด)
         if(bmiLineChart) {
             const lastRecords = history.slice(-8);
             bmiLineChart.data.labels = lastRecords.map(item => item.date);
             bmiLineChart.data.datasets[0].data = lastRecords.map(item => item.value);
             bmiLineChart.update();
+        }
+
+        // 3. อัปเดตข้อมูลกราฟแท่ง (แยกสัปดาห์)
+        const getAvg = (arr) => arr.length > 0 ? (arr.reduce((a,b)=>a+b, 0) / arr.length).toFixed(1) : 0;
+        if(bmiBarChart) {
+            bmiBarChart.data.datasets[0].data = [getAvg(weekData.w1), getAvg(weekData.w2), getAvg(weekData.w3), getAvg(weekData.w4)];
+            bmiBarChart.update();
         }
     }
 
@@ -443,34 +472,31 @@
     }
     function resetAllMenus() { resetSingleMenu('carbs'); resetSingleMenu('protein'); resetSingleMenu('sides'); }
 
-    // 📈 ฟังก์ชันเริ่มทำงานระบบกราฟเส้น (Line Chart) ตัวเดิมคัมแบ็ค
+    // 📈 ฟังก์ชันริเริ่มระบบกราฟเส้น
     function initLineChart() {
         const ctx = document.getElementById('bmiLineChart').getContext('2d');
         if(bmiLineChart) bmiLineChart.destroy();
         bmiLineChart = new Chart(ctx, {
             type: 'line',
-            data: {
-                labels: [],
-                datasets: [{ 
-                    label: 'ดัชนีมวลกาย (BMI)', 
-                    data: [], 
-                    borderColor: '#3498db', 
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)', 
-                    tension: 0.2, 
-                    fill: true 
-                }]
-            },
-            options: { 
-                responsive: true, 
-                scales: { y: { beginAtZero: false, suggestedMin: 15, suggestedMax: 30 } },
-                plugins: { datalabels: { backgroundColor: '#2c3e50', borderRadius: 4, color: 'white', font: { weight: 'bold' }, padding: 5 } }
-            }
+            data: { labels: [], datasets: [{ label: 'BMI ต่อเนื่อง', data: [], borderColor: '#3498db', backgroundColor: 'rgba(52, 152, 219, 0.05)', tension: 0.2, fill: true }] },
+            options: { responsive: true, plugins: { datalabels: { display: false } }, scales: { y: { suggestedMin: 16, suggestedMax: 28 } } }
+        });
+    }
+
+    // 📊 ฟังก์ชันริเริ่มระบบกราฟแท่ง
+    function initBarChart() {
+        const ctx = document.getElementById('bmiBarChart').getContext('2d');
+        if(bmiBarChart) bmiBarChart.destroy();
+        bmiBarChart = new Chart(ctx, {
+            type: 'bar',
+            data: { labels: ['สัปดาห์ 1', 'สัปดาห์ 2', 'สัปดาห์ 3', 'สัปดาห์ 4'], datasets: [{ label: 'เฉลี่ยรายสัปดาห์', data: [0, 0, 0, 0], backgroundColor: '#2ecc71', borderRadius: 4 }] },
+            options: { responsive: true, plugins: { datalabels: { anchor: 'end', align: 'top', font: { weight: 'bold', size: 10 } } }, scales: { y: { beginAtZero: true, max: 35 } } }
         });
     }
 
     function initPieChart(carbs, protein, fat) {
         const ctx = document.getElementById('macroPieChart').getContext('2d'); if (macroPieChart) macroPieChart.destroy();
-        macroPieChart = new Chart(ctx, { type: 'pie', data: { labels: ['คาร์บ', 'โปรตีน', 'ไขมันดี'], datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#e67e22'] }] }, options: { responsive: true, plugins: { datalabels: { display: false } } } });
+        macroPieChart = new Chart(ctx, { type: 'pie', data: { labels: ['คาร์บ', 'โปรตีน', 'ไขมัน'], datasets: [{ data: [carbs, protein, fat], backgroundColor: ['#f1c40f', '#e74c3c', '#e67e22'] }] }, options: { responsive: true, plugins: { datalabels: { display: false } } } });
     }
 </script>
 </body>
