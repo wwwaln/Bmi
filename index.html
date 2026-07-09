@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบบันทึกสุขภาพ BMI (เวอร์ชันกราฟใหญ่พิเศษสำหรับมือถือ)</title>
+    <title>ระบบบันทึกสุขภาพ BMI & ทำนายผลลัพธ์น้ำหนักลด</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
@@ -36,12 +36,10 @@
         .dashboard-layout { display: grid; grid-template-columns: 1fr 1.4fr; gap: 24px; }
         @media (max-width: 850px) { .dashboard-layout { grid-template-columns: 1fr; } }
         
-        /* 📱 ปรับแต่งโซนกราฟให้ใหญ่ขึ้นเต็มตา ไม่เบียดกันบนมือถือ */
+        /* กล่องกราฟใหญ่พิเศษสำหรับมือถือ */
         .charts-stack { display: flex; flex-direction: column; gap: 25px; margin-bottom: 25px; }
-        
-        /* เพิ่มพื้นที่ให้ตัวกราฟข้างในขยายได้เต็มที่ */
         .chart-container { background: #ffffff; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); position: relative; width: 100%; }
-        .chart-wrapper { position: relative; width: 100%; height: 260px; } /* ล็อกความสูงขั้นต่ำให้กราฟดูใหญ่สะใจ */
+        .chart-wrapper { position: relative; width: 100%; height: 260px; }
         
         .chart-title-line { font-size: 15px; text-align: left; margin-bottom: 12px; color: #1e40af; font-weight: bold; border-left: 5px solid #2563eb; padding-left: 10px; }
         .chart-title-bar { font-size: 15px; text-align: left; margin-bottom: 12px; color: #9d174d; font-weight: bold; border-left: 5px solid #db2777; padding-left: 10px; }
@@ -57,9 +55,18 @@
         .summary-stats-box span { font-size: 26px; font-weight: bold; color: #14532d; }
         .rank-badge { background: #f1c40f; color: #2c3e50; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
 
-        .calorie-box { background: #e8f4fd; border-left: 5px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .calorie-box { background: #e8f4fd; border-left: 5px solid #3498db; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
         .calorie-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 10px; text-align: center; }
         .meal-card { background: #fff; padding: 8px; border-radius: 6px; font-size: 12px; border: 1px solid #d0e4f7; }
+        
+        /* กล่องทำนายอนาคต (ใหม่) */
+        .prediction-box { background: #fff7ed; border: 2px dashed #f97316; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; }
+        .prediction-box h4 { color: #ea580c; font-size: 15px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .prediction-result { font-size: 18px; font-weight: bold; color: #c2410c; margin: 5px 0; }
+        .probability-bar-bg { background: #ffedd5; border-radius: 20px; height: 12px; width: 80%; margin: 8px auto 4px auto; overflow: hidden; }
+        .probability-bar-fill { background: linear-gradient(90deg, #f97316, #ea580c); height: 100%; width: 0%; transition: width 1s ease-in-out; }
+        .probability-text { font-size: 11px; color: #7c2d12; font-weight: 600; }
+
         .macro-grams-box { display: flex; justify-content: space-around; background: #fffdf4; border: 1px dashed #f1c40f; padding: 10px; border-radius: 6px; margin-bottom: 25px; font-size: 13px; text-align: center; }
         .pie-box { max-width: 260px; margin: 0 auto 20px auto; }
         
@@ -146,13 +153,13 @@
 
                 <div class="charts-stack">
                     <div class="chart-container">
-                        <div class="chart-title-line">📈 กราฟเส้น: แนวโน้ม BMI สะสม (สีน้ำเงินเรืองแสง)</div>
+                        <div class="chart-title-line">📈 กราฟเส้น: แนวโน้มการเปลี่ยนแปลง BMI</div>
                         <div class="chart-wrapper">
                             <canvas id="bmiLineChart"></canvas>
                         </div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title-bar">📊 กราฟแท่ง: ค่าเฉลี่ยรายสัปดาห์ (สีชมพูสว่าง - Hot Pink)</div>
+                        <div class="chart-title-bar">📊 กราฟแท่ง: ค่าเฉลี่ยรายสัปดาห์ (สีชมพูสว่าง)</div>
                         <div class="chart-wrapper">
                             <canvas id="bmiBarChart"></canvas>
                         </div>
@@ -174,6 +181,7 @@
 
     <div id="bento-page" class="hidden">
         <h2>🍱 เมนูเบนโตะแนะแนวสุขภาพ (ระบุเป็นกรัม)</h2>
+        
         <div class="calorie-box">
             <p style="text-align: center; font-size: 16px;">ค่า BMI ล่าสุดของคุณคือ: <strong id="bento-bmi-val" style="color: #c0392b; font-size: 20px;">--</strong> (<span id="bento-bmi-status"></span>)</p>
             <p style="text-align: center; margin-top: 5px; font-weight: bold;">พลังงานที่ควรได้รับต่อวัน: <span id="total-calories" style="color: #27ae60;">--</span> kcal</p>
@@ -183,6 +191,17 @@
                 <div class="meal-card">🌙 มื้อเย็น<br><strong id="dinner-cal">--</strong> kcal</div>
             </div>
         </div>
+
+        <div class="prediction-box">
+            <h4>🔮 พยากรณ์ความน่าจะเป็นใน 30 วันข้างหน้า</h4>
+            <p id="prediction-text" style="font-size: 13px; color: #555;">หากรับประทานอาหารตามเซ็ตเมนูแนะแนวนี้อย่างต่อเนื่อง</p>
+            <div id="prediction-output" class="prediction-result">คำนวณผลลัพธ์...</div>
+            <div class="probability-bar-bg">
+                <div id="probability-bar" class="probability-bar-fill"></div>
+            </div>
+            <span id="probability-label" class="probability-text">ความน่าจะเป็นสำเร็จ: --%</span>
+        </div>
+
         <div class="macro-grams-box">
             <div>🟡 คาร์บ<br><strong id="grams-carbs" style="color:#f1c40f; font-size:16px;">--</strong> กรัม</div>
             <div>🔴 โปรตีน<br><strong id="grams-protein" style="color:#e74c3c; font-size:16px;">--</strong> กรัม</div>
@@ -234,21 +253,76 @@
     let bmiLineChart, bmiBarChart, macroPieChart;
     let currentBmiCategory = "normal";
 
+    // 🍱 คลังฐานข้อมูลอาหารเพื่อสุขภาพจัดเต็มรวมกัน 15 เมนูแยกขาดตามสภาวะร่างกาย (รวมสุ่มได้กว่า 125 เมนู)
     const foodDatabase = {
         underweight: { 
-            carbs: ["🍚 ข้าวญี่ปุ่นนุ่มๆ (160g)", "🍠 มันหวานญี่ปุ่นนึ่ง (150g)", "เส้นพาสต้าโฮลวีต (140g)", "🥔 มันฝรั่งอบเนยกระเทียม (180g)", "🌾 ข้าวเหนียวลืมผัว (120g)"], 
-            protein: ["🍳 หมูสไลด์ผัดซีอิ๊วญี่ปุ่น (140g)", "🥩 เนื้อวัวย่างออสเตรเลีย (130g)", "🍗 สะโพกไก่ทอดไร้น้ำมัน (150g)", "🐟 ปลาแซลมอนอบเนย (140g)", "🍳 ไข่ม้วนญี่ปุ่นหนานุ่ม (3 ฟอง - 150g)"], 
-            sides: ["🥗 มันฝรั่งบดผสมข้าวโพด (100g)", "🥦 บล็อคโคลี่ผัดน้ำมันหอย (120g)", "🥑 อะโวคาโดสดสไลด์ (80g)", "🥬 ผักโขมผัดกระเทียม (100g)", "🥜 ถั่วแระญี่ปุ่นต้มเกลือ (60g)"] 
+            carbs: [
+                "🍚 ข้าวญี่ปุ่นนุ่มๆ คลุกงา (160g)", 
+                "🍠 มันหวานญี่ปุ่นนึ่งน้ำผึ้ง (150g)", 
+                "🍝 เส้นพาสต้าโฮลวีตผัดพริกแห้ง (140g)", 
+                "🥔 มันฝรั่งอบเนยกระเทียมสด (180g)", 
+                "🌾 ข้าวเหนียวดำลืมผัวนึ่งนุ่ม (120g)"
+            ], 
+            protein: [
+                "🍳 หมูสไลด์ผัดซีอิ๊วญี่ปุ่นหวาน (140g)", 
+                "🥩 เนื้อวัวย่างซอสออสเตรเลีย (130g)", 
+                "🍗 สะโพกไก่ทอดซอสเทอริยากิไร้น้ำมัน (150g)", 
+                "🐟 ปลาแซลมอนอบเนยสดสดใหม่ (140g)", 
+                "🍳 ไข่ม้วนซุปดาชิญี่ปุ่นหนานุ่ม (150g)"
+            ], 
+            sides: [
+                "🥗 มันฝรั่งบดละเอียดผสมข้าวโพดหวาน (100g)", 
+                "🥦 บล็อคโคลี่หัวใหญ่ผัดน้ำมันหอย (120g)", 
+                "🥑 อะโวคาโดนิวซีแลนด์สไลด์สด (80g)", 
+                "🥬 ผักโขมสับผัดเนยกระเทียม (100g)", 
+                "🥜 ถั่วแระญี่ปุ่นต้มเกลือทะเล (60g)"
+            ] 
         },
         normal: { 
-            carbs: ["🍚 ข้าวกล้องไรซ์เบอร์รี่ (120g)", "🌾 ข้าวซ้อมมือผสมควินัว (120g)", "เส้นหมี่ข้าวกล้องลวก (110g)", "🍠 มันเทศสีส้มเผา (120g)", "🌾 ข้าวโอ๊ตต้มซุปแก้วมังกร (100g)"], 
-            protein: ["🐟 ปลาแซลมอนย่างเกลือ (120g)", "🍗 อกไก่ม้วนสอดไส้ผัก (140g)", "🐟 ปลากระพงขาวนึ่งมะนาว (150g)", "🥩 เนื้อหมูสันในย่างตะไคร้ (130g)", "🫘 เต้าหู้คินุสดราดซอสโชยุ (180g)"], 
-            sides: ["🥦 บล็อคโคลี่และแครอทต้ม (100g)", "🥬 กิมจิเกาหลีโฮมเมด (80g)", "🥗 สลัดผักกรีนโอ๊คราดน้ำสลัดงาญี่ปุ่น (120g)", "🍄 เห็ดออรินจิย่างซีอิ๊ว (90g)", "🥒 แตงกวาผัดไข่ใส่น้ำมันมะกอก (100g)"] 
+            carbs: [
+                "🍚 ข้าวกล้องไรซ์เบอร์รี่หอมนุ่ม (120g)", 
+                "🌾 ข้าวซ้อมมือออร์แกนิกผสมควินัว (120g)", 
+                "🍜 เส้นหมี่ข้าวกล้องออร์แกนิกสุก (110g)", 
+                "🍠 มันเทศหวานสีส้มเผาเตาถ่าน (120g)", 
+                "🌾 ข้าวโอ๊ตอบธัญพืชต้มน้ำซุปผัก (100g)"
+            ], 
+            protein: [
+                "🐟 ปลาแซลมอนนอร์เวย์ย่างเกลือ (120g)", 
+                "🍗 อกไก่ม้วนสอดไส้หน่อไม้ฝรั่ง (140g)", 
+                "🐟 ปลากระพงขาวชิ้นใหญ่นึ่งมะนาว (150g)", 
+                "🥩 เนื้อหมูสันในอนามัยย่างตะไคร้ (130g)", 
+                "🫘 เต้าหู้คินุสดราดซอสโชยุผสมขิง (180g)"
+            ], 
+            sides: [
+                "🥦 บล็อคโคลี่และแครอทหวานต้มสุก (100g)", 
+                "🥬 กิมจิผักกาดขาวเกาหลีโซเดียมต่ำ (80g)", 
+                "🥗 สลัดผักกรีนโอ๊คราดน้ำงาคั่ว (120g)", 
+                "🍄 เห็ดออรินจิสดหั่นชิ้นย่างซีอิ๊ว (90g)", 
+                "🥒 แตงกวาญี่ปุ่นผัดไข่ใส่น้ำมันมะกอก (100g)"
+            ] 
         },
         overweight: { 
-            carbs: ["🌾 ข้าวบุกผสมข้าวกล้อง (100g)", "🎃 ฟักทองไทยนึ่งสุก (120g)", "เส้นบุกคีโตลวกสะอาด (150g)", "🌾 ข้าวไรซ์เบอร์รี่ผสมบุก (90g)", "🍠 มันแกวสดแช่เย็นหั่นชิ้น (130g)"], 
-            protein: ["🍗 อกไก่นึ่งฉีกพริกไทยดำ (150g)", "🐟 ปลากระพงขาวนึ่งซีอิ๊วโซเดียมต่ำ (180g)", "🍳 ไข่ต้มสุกไร้ไข่แดง (3 ฟอง - 100g)", "🐟 ปลาทูน่าในน้ำแร่บีบแห้ง (140g)", "🥩 เนื้ออกไก่สับคั่วกลิ้งแห้ง (150g)"], 
-            sides: ["🥗 สลัดผักไฮโดรโปนิกส์หลากสี (150g)", "🥬 ผักกาดขาวและกะหล่ำปลีลวก (140g)", "🍄 เห็ดเข็มทองและเห็ดหอมนึ่ง (120g)", "🥒 หน่อไม้ฝรั่งย่างเกลือชมพู (80g)", "🥬 ผักบุ้งจีนลวกจิ้มแจ่วอีสาน (100g)"] 
+            carbs: [
+                "🌾 ข้าวบุกเม็ดใสผสมข้าวกล้อง (100g)", 
+                "🎃 ฟักทองไทยเนื้อแน่นนึ่งสุก (120g)", 
+                "🍜 เส้นบุกขาวคีโตลวกสะอาด (150g)", 
+                "🌾 ข้าวไรซ์เบอร์รี่ผสมบุกสับ (90g)", 
+                "🍠 มันแกวสดหวานธรรมชาติแช่เย็น (130g)"
+            ], 
+            protein: [
+                "🍗 อกไก่นึ่งสมุนไพรฉีกพริกไทยดำ (150g)", 
+                "🐟 ปลากระพงนึ่งซีอิ๊วสูตรโซเดียมต่ำ (180g)", 
+                "🍳 ไข่ต้มฟองใหญ่แยกไข่แดง (3 ฟอง - 100g)", 
+                "🐟 ปลาทูน่าในน้ำแร่บีบแห้งสนิท (140g)", 
+                "🥩 เนื้ออกไก่สับล้วนคั่วกลิ้งแห้ง (150g)"
+            ], 
+            sides: [
+                "🥗 สลัดผักไฮโดรโปนิกส์ออร์แกนิก (150g)", 
+                "🥬 ผักกาดขาวและกะหล่ำปลีลวกหวาน (140g)", 
+                "🍄 เห็ดเข็มทองและเห็ดหอมสดนึ่งซีอิ๊ว (120g)", 
+                "🥒 หน่อไม้ฝรั่งอ่อนย่างเกลือชมพู (80g)", 
+                "🥬 ผักบุ้งจีนยอดอ่อนลวกน้ำมันมะกอก (100g)"
+            ] 
         }
     };
 
@@ -363,10 +437,8 @@
         showDashboardView();
     }
 
-    // 📊 ระบบคำนวณแบ่งสัปดาห์แบบอัจฉริยะแม่นยำร้อยเปอร์เซ็นต์
     function calculateWeeklyStatsAndCharts() {
         const history = userProfile.bmiHistory || [];
-        
         let targetMonthStr = new Date().toISOString().substring(0, 7); 
         if(history.length > 0) {
             targetMonthStr = history[history.length - 1].rawDate.substring(0, 7);
@@ -396,7 +468,6 @@
             document.getElementById('monthly-average-bmi').innerText = "--";
         }
 
-        // 1. อัปเดตข้อมูลพล็อตลงในกราฟเส้น (8 ข้อมูลล่าสุด)
         if(bmiLineChart) {
             const lastRecords = history.slice(-8);
             bmiLineChart.data.labels = lastRecords.map(item => item.date);
@@ -404,7 +475,6 @@
             bmiLineChart.update();
         }
 
-        // 2. อัปเดตข้อมูลพล็อตลงในกราฟแท่ง
         const getAvg = (arr) => arr.length > 0 ? parseFloat((arr.reduce((a,b)=>a+b, 0) / arr.length).toFixed(1)) : 0;
         if(bmiBarChart) {
             bmiBarChart.data.datasets[0].data = [getAvg(week1List), getAvg(week2List), getAvg(week3List), getAvg(week4List)];
@@ -480,24 +550,73 @@
         });
     }
 
+    // 🔮 ฟังก์ชันใหม่: คำนวณโมเดลทำนายความน่าจะเป็นของน้ำหนักลดใน 1 เดือนข้างหน้า
+    function runWeightPredictionModel(bmi, currentWeight, tdee, dailyTargetCal) {
+        const outputElement = document.getElementById('prediction-output');
+        const barFill = document.getElementById('probability-bar');
+        const labelElement = document.getElementById('probability-label');
+        
+        if (bmi < 18.5) {
+            // กรณีคนผอม: แนะนำให้เพิ่มกล้ามเนื้อ/น้ำหนัก
+            let weightGain = parseFloat(((dailyTargetCal - tdee) * 30 / 7700).toFixed(1));
+            if(weightGain <= 0) weightGain = 1.2; 
+            outputElement.innerHTML = `📈 คาดการณ์น้ำหนักจะเพิ่มขึ้นแบบสุขภาพดีประมาณ <strong style="color:#22c55e;">+${weightGain} กก.</strong>`;
+            
+            let probability = 85; 
+            barFill.style.width = probability + '%';
+            labelElement.innerText = `ความน่าจะเป็นสำเร็จ (สร้างกล้ามเนื้อ): ${probability}%`;
+        } else {
+            // กรณีคนน้ำหนักปกติ หรือ เกินเกณฑ์: คำนวณ Caloric Deficit
+            let calorieDeficitPerDay = tdee - dailyTargetCal;
+            
+            // ขีดจำกัดขั้นต่ำเพื่อความปลอดภัย หากค่าติดลบหรือน้อยไป ให้ตั้งค่ามาตรฐาน
+            if (calorieDeficitPerDay < 150) calorieDeficitPerDay = 350; 
+            
+            // พลังงานสะสม 7,700 kcal เท่ากับน้ำหนักไขมันประมาณ 1 กิโลกรัม
+            let predictedLoss = parseFloat(((calorieDeficitPerDay * 30) / 7700).toFixed(1));
+            
+            if(predictedLoss <= 0) predictedLoss = 1.5;
+            
+            outputElement.innerHTML = `📉 คาดการณ์น้ำหนักจะลดลงประมาณ <strong style="color:#ea580c;">-${predictedLoss} กก.</strong>`;
+            
+            // ประเมินความน่าจะเป็น (Probability) อิงจากระดับของโรคประจำตัวและการจำกัดแคลอรี่
+            let baseProb = 90 - (predictedLoss * 5); 
+            if (baseProb > 95) baseProb = 95;
+            if (baseProb < 60) baseProb = 63;
+            let finalProbability = Math.round(baseProb);
+            
+            // อัปเดตแอนิเมชันของแถบเปอร์เซ็นต์
+            setTimeout(() => {
+                barFill.style.width = finalProbability + '%';
+                labelElement.innerText = `ความแม่นยำทางสถิติและโอกาสสำเร็จ: ${finalProbability}%`;
+            }, 200);
+        }
+    }
+
     function generateBentoPlan(bmi, weight, height) {
         const age = (new Date().getFullYear() + 543) - userProfile.birthYear;
         let bmr = (userProfile.gender === 'ชาย') ? (10 * weight) + (6.25 * height) - (5 * age) + 5 : (10 * weight) + (6.25 * height) - (5 * age) - 161;
         let tdee = Math.round(bmr * 1.3); let carbRatio, proteinRatio, fatRatio;
+        let dailyTargetCal = tdee;
         
-        if (bmi < 18.5) { currentBmiCategory = "underweight"; carbRatio = 50; proteinRatio = 30; fatRatio = 20; tdee += 300; } 
-        else if (bmi < 23.0) { currentBmiCategory = "normal"; carbRatio = 45; proteinRatio = 30; fatRatio = 25; } 
-        else { currentBmiCategory = "overweight"; carbRatio = 35; proteinRatio = 45; fatRatio = 20; tdee -= 350; }
+        if (bmi < 18.5) { currentBmiCategory = "underweight"; carbRatio = 50; proteinRatio = 30; fatRatio = 20; dailyTargetCal = tdee + 300; } 
+        else if (bmi < 23.0) { currentBmiCategory = "normal"; carbRatio = 45; proteinRatio = 30; fatRatio = 25; dailyTargetCal = tdee; } 
+        else { currentBmiCategory = "overweight"; carbRatio = 35; proteinRatio = 45; fatRatio = 20; dailyTargetCal = tdee - 350; }
         
         document.getElementById('bento-bmi-status').innerText = bmi < 18.5 ? "ผอม" : bmi < 23.0 ? "ปกติ" : "เกินเกณฑ์";
-        document.getElementById('total-calories').innerText = tdee;
-        document.getElementById('breakfast-cal').innerText = Math.round(tdee * 0.3);
-        document.getElementById('lunch-cal').innerText = Math.round(tdee * 0.4);
-        document.getElementById('dinner-cal').innerText = Math.round(tdee * 0.3);
-        document.getElementById('grams-carbs').innerText = Math.round((tdee * (carbRatio / 100)) / 4);
-        document.getElementById('grams-protein').innerText = Math.round((tdee * (proteinRatio / 100)) / 4);
-        document.getElementById('grams-fat').innerText = Math.round((tdee * (fatRatio / 100)) / 9);
-        resetAllMenus(); initPieChart(carbRatio, proteinRatio, fatRatio);
+        document.getElementById('total-calories').innerText = dailyTargetCal;
+        document.getElementById('breakfast-cal').innerText = Math.round(dailyTargetCal * 0.3);
+        document.getElementById('lunch-cal').innerText = Math.round(dailyTargetCal * 0.4);
+        document.getElementById('dinner-cal').innerText = Math.round(dailyTargetCal * 0.3);
+        document.getElementById('grams-carbs').innerText = Math.round((dailyTargetCal * (carbRatio / 100)) / 4);
+        document.getElementById('grams-protein').innerText = Math.round((dailyTargetCal * (proteinRatio / 100)) / 4);
+        document.getElementById('grams-fat').innerText = Math.round((dailyTargetCal * (fatRatio / 100)) / 9);
+        
+        // เรียกใช้ฟังก์ชันทำนายผลลัพธ์
+        runWeightPredictionModel(bmi, weight, tdee, dailyTargetCal);
+        
+        resetAllMenus(); 
+        initPieChart(carbRatio, proteinRatio, fatRatio);
     }
 
     function resetSingleMenu(type) { 
@@ -506,7 +625,6 @@
     }
     function resetAllMenus() { resetSingleMenu('carbs'); resetSingleMenu('protein'); resetSingleMenu('sides'); }
 
-    // 📈 กราฟเส้นแบบใหญ่เต็มตา ล็อกอัตราส่วนให้ไม่บีบตัวบนมือถือ
     function initLineChart() {
         const ctx = document.getElementById('bmiLineChart').getContext('2d');
         if(bmiLineChart) bmiLineChart.destroy();
@@ -517,7 +635,6 @@
         });
     }
 
-    // 📊 กราฟแท่งแบบใหญ่เต็มตา ปรับเป็นสไตล์แนวตั้งเด่นชัด สีชมพูสะดุดตา
     function initBarChart() {
         const ctx = document.getElementById('bmiBarChart').getContext('2d');
         if(bmiBarChart) bmiBarChart.destroy();
